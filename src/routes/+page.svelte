@@ -105,7 +105,8 @@
 
 	.grid-container > div {
 		background-color: bisque;
-		border: 1px dashed grey;
+		border-right: 1px dashed grey;
+		border-bottom: 1px dashed grey;
 		position: relative; /* Needed for ripple effect */
 		overflow: hidden; /* Hide overflow for ripple effect */
 	}
