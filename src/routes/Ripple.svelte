@@ -1,14 +1,9 @@
 <script>
-
-    export let ripples = [];
-
+    import { ripples } from '../lib/rippleStore.js';
 </script>
 
-<div
-    role="button"
-    tabindex="0"
->
-    {#each ripples as ripple (ripple.id)}
+<div role="button" tabindex="0">
+    {#each $ripples as ripple (ripple.id)}
         <div
             class="ripple"
             style="width: {ripple.size}px; height: {ripple.size}px; top: {ripple.y}px; left: {ripple.x}px;"
