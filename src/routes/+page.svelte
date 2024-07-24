@@ -11,7 +11,7 @@
 </script>
 
 <div class="grid-container">
-    <div></div>
+    <div>rêve</div>
     <div></div>
     <div on:mousedown={startRipples} on:mouseup={stopRipples} on:mousemove={updateMousePosition}>
         <Ripple />
