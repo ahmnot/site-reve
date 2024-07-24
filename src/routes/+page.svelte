@@ -2,13 +2,17 @@
 	import '../global.css';
 
 	let ripples = [];
-	let intervalId;
-	let rippleTarget;
+	let rippleTarget = null;
 	let mouseX = 0;
 	let mouseY = 0;
 	let isFlipped = false;
+	let lastMouseX = 0;
+	let lastMouseY = 0;
+	let lastRippleTime = 0;
+	const rippleDelay = 150; // Delay in milliseconds between ripples
 
 	function createRipple(x, y) {
+		if (!rippleTarget) return;
 		const container = rippleTarget;
 		const rect = container.getBoundingClientRect();
 		const size = Math.max(rect.width, rect.height);
@@ -32,21 +36,28 @@
 		rippleTarget = event.currentTarget;
 		updateMousePosition(event);
 		createRipple(mouseX, mouseY);
-		intervalId = setInterval(() => {
-			if (rippleTarget) {
-				createRipple(mouseX, mouseY);
-			}
-		}, 75);
+		lastRippleTime = Date.now(); // Reset the last ripple time to now
 	}
 
 	function stopRipples() {
-		clearInterval(intervalId);
 		rippleTarget = null;
 	}
 
 	function updateMousePosition(event) {
 		mouseX = event.clientX;
 		mouseY = event.clientY;
+
+		const currentTime = Date.now();
+		if (
+			rippleTarget &&
+			(mouseX !== lastMouseX || mouseY !== lastMouseY) &&
+			currentTime - lastRippleTime >= rippleDelay
+		) {
+			createRipple(mouseX, mouseY);
+			lastMouseX = mouseX;
+			lastMouseY = mouseY;
+			lastRippleTime = currentTime; // Update last ripple time
+		}
 	}
 
 	function flipCard() {
@@ -89,7 +100,7 @@
 			<div class="card-back">ciel</div>
 		</div>
 	</div>
-  <div></div>
+	<div></div>
 </div>
 
 <style>
@@ -178,9 +189,9 @@
 		perspective: 1000px;
 	}
 
-  .card-container:hover {
-    cursor: pointer;
-  }
+	.card-container:hover {
+		cursor: pointer;
+	}
 
 	.card {
 		width: 100%;
@@ -193,7 +204,8 @@
 		transform: rotateY(180deg);
 	}
 
-	.card-front, .card-back {
+	.card-front,
+	.card-back {
 		position: absolute;
 		width: 100%;
 		height: 100%;
