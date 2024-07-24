@@ -1,26 +1,24 @@
 <script>
 	import '../global.css';
+	import Ball from './Ball.svelte';
+	import Ripple from './Ripple.svelte';
+	import FlippableCard from './FlippableCard.svelte';
 
 	let ripples = [];
-	let rippleTarget = null;
-	let mouseX = 0;
-	let mouseY = 0;
-	let isFlipped = false;
-	let lastMouseX = 0;
-	let lastMouseY = 0;
-	let lastRippleTime = 0;
-	const rippleDelay = 150; // Delay in milliseconds between ripples
+	let rippleTarget;
 
-	function createRipple(x, y) {
+	function createRipple(x, y, isFirst) {
 		if (!rippleTarget) return;
 		const container = rippleTarget;
 		const rect = container.getBoundingClientRect();
-		const size = Math.max(rect.width, rect.height);
+		const size = isFirst
+			? Math.max(rect.width, rect.height)
+			: Math.max(rect.width, rect.height) / 1.75;
 		const rippleX = x - rect.left - size / 2;
 		const rippleY = y - rect.top - size / 2;
 
 		const ripple = {
-			id: Date.now(),
+			id: `${Date.now()}-${Math.random()}`, // Ensure a unique ID
 			x: rippleX,
 			y: rippleY,
 			size
@@ -35,12 +33,14 @@
 	function startRipples(event) {
 		rippleTarget = event.currentTarget;
 		updateMousePosition(event);
-		createRipple(mouseX, mouseY);
+		createRipple(mouseX, mouseY, true);
+		isFirstRipple = false;
 		lastRippleTime = Date.now(); // Reset the last ripple time to now
 	}
 
 	function stopRipples() {
 		rippleTarget = null;
+		isFirstRipple = true;
 	}
 
 	function updateMousePosition(event) {
@@ -53,52 +53,36 @@
 			(mouseX !== lastMouseX || mouseY !== lastMouseY) &&
 			currentTime - lastRippleTime >= rippleDelay
 		) {
-			createRipple(mouseX, mouseY);
+			createRipple(mouseX, mouseY, false);
 			lastMouseX = mouseX;
 			lastMouseY = mouseY;
 			lastRippleTime = currentTime; // Update last ripple time
 		}
 	}
 
-	function flipCard() {
-		isFlipped = !isFlipped;
-	}
+	let mouseX = 0;
+	let mouseY = 0;
+	let isFirstRipple = true;
+	let lastMouseX = 0;
+	let lastMouseY = 0;
+	let lastRippleTime = 0;
+	const rippleDelay = 40; // Delay in milliseconds between ripples
 </script>
 
 <div class="grid-container">
-	<div>rêve</div>
 	<div></div>
-	<div
-		class="ripple-container"
-		role="button"
-		tabindex="0"
-		on:mousedown={startRipples}
-		on:mouseup={stopRipples}
-		on:mouseleave={stopRipples}
-		on:mousemove={updateMousePosition}
-	>
-		{#each ripples as ripple (ripple.id)}
-			<div
-				class="ripple"
-				style="width: {ripple.size}px; height: {ripple.size}px; top: {ripple.y}px; left: {ripple.x}px;"
-			></div>
-		{/each}
+	<div></div>
+	<div on:mousedown={startRipples} on:mouseup={stopRipples} on:mousemove={updateMousePosition}>
+		<Ripple {ripples} />
+	</div>
+	<div class="left-div">
+		<Ball />
 	</div>
 	<div></div>
 	<div></div>
 	<div></div>
-	<div></div>
-	<div
-		class="card-container"
-		role="button"
-		tabindex="0"
-		on:click={flipCard}
-		class:flipped={isFlipped}
-	>
-		<div class="card">
-			<div class="card-front">vie</div>
-			<div class="card-back">ciel</div>
-		</div>
+	<div>
+		<FlippableCard frontText="vie" backText="ciel" />
 	</div>
 	<div></div>
 </div>
@@ -152,76 +136,9 @@
 		grid-area: 3 / 3;
 	}
 
-	.ripple-container {
+	.left-div {
+		grid-area: 1 / 1;
 		position: relative;
 		overflow: hidden;
-	}
-
-	.ripple-container:hover {
-		cursor: pointer;
-	}
-
-	.ripple {
-		position: absolute;
-		background: radial-gradient(circle, white 10%, Azure 70%);
-		border-radius: 50%;
-		transform: scale(0);
-		animation: ripple-animation 1.5s cubic-bezier(0.4, 0, 0.2, 1);
-	}
-
-	@keyframes ripple-animation {
-		0% {
-			transform: scale(0);
-			opacity: 1;
-		}
-		50% {
-			transform: scale(1);
-			opacity: 0;
-		}
-		100% {
-			transform: scale(1.2);
-			opacity: 0;
-		}
-	}
-
-	.card-container {
-		grid-area: 3 / 3;
-		perspective: 1000px;
-	}
-
-	.card-container:hover {
-		cursor: pointer;
-	}
-
-	.card {
-		width: 100%;
-		height: 100%;
-		transform-style: preserve-3d;
-		transition: transform 0.6s;
-	}
-
-	.flipped .card {
-		transform: rotateY(180deg);
-	}
-
-	.card-front,
-	.card-back {
-		position: absolute;
-		width: 100%;
-		height: 100%;
-		backface-visibility: hidden;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-size: 1.5em;
-	}
-
-	.card-front {
-		background-color: bisque;
-	}
-
-	.card-back {
-		background-color: LightSteelBlue;
-		transform: rotateY(180deg);
 	}
 </style>
