@@ -14,7 +14,7 @@
 <style>
     .ripple {
         position: absolute;
-        background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 10%, rgba(240, 255, 255, 0.2) 70%);
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 10%, rgba(240, 255, 255, 0.2) 70%);
         border-radius: 50%;
         transform: scale(0);
         animation: ripple-animation 1.5s cubic-bezier(0.4, 0, 0.2, 1);

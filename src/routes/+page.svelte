@@ -1,36 +1,54 @@
 <script>
-    import '../global.css';
-    import Ball from './Ball.svelte';
-    import Ripple from './Ripple.svelte';
-    import FlippableCard from './FlippableCard.svelte';
-    import {
-        startRipples,
-        stopRipples,
-        updateMousePosition
-    } from '../lib/rippleStore.js';
-	import Square from './Square.svelte';
+	import { onMount } from 'svelte';
+	import '../global.css';
+	import Ripple from './Ripple.svelte';
+	import FlippableCard from './FlippableCard.svelte';
+	import { startRipples, stopRipples, updateMousePosition } from '../lib/rippleStore.js';
+	import MatterWorld from './MatterWorld.svelte';
+	import ThreeWorld from './ThreeWorld.svelte';
+	import Negative from './Negative.svelte';
 </script>
 
-<div class="grid-container">
-    <div>rêve</div>
-    <div></div>
-    <div on:mousedown={startRipples} on:mouseup={stopRipples} on:mousemove={updateMousePosition}>
-        <Ripple />
+<div class="outer-container">
+    <div class="grid-container">
+        <div>rêve</div>
+        <div></div>
+        <div on:mousedown={startRipples} on:mouseup={stopRipples} on:mousemove={updateMousePosition}>
+            <Ripple />
+        </div>
+        <div class="left-div">
+            <MatterWorld />
+        </div>
+        <div></div>
+        <div class="negative-div">
+            <Negative />
+        </div>
+        <div></div>
+        <div>
+            <FlippableCard 
+                faces={[
+                    {text: "vie", color: "tomato"},
+                    {text: "ciel", color: "LightSteelBlue"},
+                    {text: "terre", color: "lightgreen"},
+                    // Add more faces if needed
+                ]}
+            />
+        </div>
+        <div>
+            <ThreeWorld />
+        </div>
     </div>
-    <div class="left-div">
-        <Ball />
-        <Square />
-    </div>
-    <div></div>
-    <div></div>
-    <div></div>
-    <div>
-        <FlippableCard frontText="vie" backText="ciel" />
-    </div>
-    <div></div>
 </div>
 
 <style>
+    .outer-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100vw;
+        height: 100vh;
+    }
+
     .grid-container {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -49,38 +67,14 @@
         overflow: hidden; /* Hide overflow for ripple effect */
     }
 
-    .grid-container > div:nth-child(1) {
-        grid-area: 1 / 1;
-        font-size: 1.5em;
-    }
-    .grid-container > div:nth-child(2) {
-        grid-area: 1 / 2;
-    }
-    .grid-container > div:nth-child(3) {
-        grid-area: 1 / 3;
-        cursor: pointer;
-    }
-    .grid-container > div:nth-child(4) {
+    .left-div {
         grid-area: 2 / 1;
-    }
-    .grid-container > div:nth-child(5) {
-        grid-area: 2 / 2;
-    }
-    .grid-container > div:nth-child(6) {
-        grid-area: 2 / 3;
-    }
-    .grid-container > div:nth-child(7) {
-        grid-area: 3 / 1;
-    }
-    .grid-container > div:nth-child(8) {
-        grid-area: 3 / 2;
-    }
-    .grid-container > div:nth-child(9) {
-        grid-area: 3 / 3;
+        position: relative;
+        overflow: hidden;
     }
 
-    .left-div {
-        grid-area: 1 / 1;
+    .negative-div {
+        grid-area: 2 / 3;
         position: relative;
         overflow: hidden;
     }
