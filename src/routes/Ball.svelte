@@ -8,7 +8,7 @@
     let velocityX = 0, velocityY = 0;
     const gravity = 0.5;
     const bounceFactor = 0.5;
-    const velocityFactor = 5; // Factor to amplify the effect of mouse movements
+    const velocityFactor = 3; // Factor to amplify the effect of mouse movements
     let lastMouseX = 0, lastMouseY = 0;
 
     function handleMouseDown(event) {

@@ -8,6 +8,7 @@
         stopRipples,
         updateMousePosition
     } from '../lib/rippleStore.js';
+	import Square from './Square.svelte';
 </script>
 
 <div class="grid-container">
@@ -18,6 +19,7 @@
     </div>
     <div class="left-div">
         <Ball />
+        <Square />
     </div>
     <div></div>
     <div></div>
