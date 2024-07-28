@@ -3,11 +3,11 @@
 	import { onMount } from 'svelte';
 	import Rain from './Rain.svelte';
 	import Matter from 'matter-js';
-	import Arbrisseau from './Arbrisseau.svelte';
+	import Tree from './Tree.svelte';
 
-	let rainColor = 'rgba(0, 0, 0, 0.5)';
-	let isRaining = true;
-	let expanded = true;
+	let rainColor = 'rgba(176, 224, 230, 0.5)';
+	let isRaining = false;
+	let expanded = false;
 	let engine;
 	let box;
 	let isFirstClick = true;
@@ -119,9 +119,9 @@
 				Matter.Body.setVelocity(box.body, { x: 0, y: 0 });
 				Matter.Body.setAngularVelocity(box.body, 0);
 				isRaining = true;
-				setInterval(() => (growing = true), 5000);
+				setInterval(() => (isFirstBranchGrowing = true), 1000);
 			} else {
-				isRaining = true;
+				isRaining = false;
 			}
 
 			box.render();
@@ -142,21 +142,90 @@
 		engine.gravity.y = 1;
 	}
 
+	let leftPosition = '50%';
+
 	let rainGround = '70vh'; // La position du sol de la pluie
 
-	let branch1Growing = false;
-	let branch1Left = '50%';
-    let branch1Direction = '0deg';
-	let branch1Length = '500px';
+	let isFirstBranchGrowing = false;
 
-	let branch2Growing = false;
-	let branch2Left = '50%';
-    let branch2Direction = '90deg'; // Direction of the second branch
-	let branch2Length = '250px';
+// Function to generate branches with alternating 90/-90 degree angles
+function generateBranches(numBranches, depth = 3) {
+	const branches = [];
+	let initialLength = 10; // Initial length of the first branch
+	let currentLength = initialLength;
+	let currentDirection = 0;
+	let lengthDecrementFactor = 0.98; // Factor to decrement the length exponentially
+	let inSpiralMode = false; // Flag to track spiral mode
+	let leafProbability = 0.2; // Probability of creating a leaf
+	let spiralProbability = 0.05;
+	let branchOnBranchProbability = 0.01; // Probability of creating a branch on an existing branch
 
-	setTimeout(() => {
-		branch1Growing = true;
-	}, 100);
+	function createBranch(id, length, direction, color = 'darkgoldenrod') {
+		return {
+			id: id,
+			length: `${length}vw`,
+			direction: `${direction}deg`,
+			color: color,
+			branches: []
+		};
+	}
+
+	function createLeaf(parentId) {
+		return {
+			id: `${parentId}-side`,
+			length: `15px`,
+			direction: `${Math.random() < 0.5 ? 90 : -90}deg`,
+			color: 'forestgreen',
+			branches: []
+		};
+	}
+
+	let parentBranch = createBranch(1, currentLength, currentDirection);
+	branches.push(parentBranch);
+
+	for (let i = 2; i <= numBranches; i++) {
+		currentLength *= lengthDecrementFactor; 
+		let currentDirection;
+		if (i <= 5) {
+			currentDirection = i % 2 === 0 ? 90 : -90;
+		} else {
+			if (i <= 9) {
+				currentDirection = i % 2 === 0 ? -90 : 90;
+			} else {
+				if (Math.random() < spiralProbability) {
+					inSpiralMode = !inSpiralMode;
+				}
+
+				if (inSpiralMode) {
+					currentDirection = 90;
+				} else {
+					currentDirection = Math.random() < 0.5 ? 90 : -90;
+				}
+			}
+		}
+
+		const newBranch = createBranch(i, currentLength, currentDirection);
+		parentBranch.branches.push(newBranch);
+
+		// Occasionally create a side branch
+		if (Math.random() < leafProbability) {
+			const sideBranch = createLeaf(newBranch.id);
+			newBranch.branches.push(sideBranch);
+		}
+
+		// Occasionally create a new set of branches on an existing branch
+		if (depth > 0 && Math.random() < branchOnBranchProbability) {
+			newBranch.branches.push(...generateBranches(Math.floor(numBranches / 2), depth - 1));
+		}
+
+		// Update the parentBranch to the newly created branch
+		parentBranch = newBranch;
+	}
+
+	return branches;
+}
+
+let branches = generateBranches(200);
 </script>
 
 <div class="outer-container">
@@ -166,19 +235,8 @@
 			{#if isRaining}
 				<Rain top="45%" width="80%" left="5%" {rainGround} {rainColor} />
 			{/if}
-			<Arbrisseau
-				treeGround={rainGround}
 
-				{branch1Growing}
-				{branch1Left}
-				{branch1Direction}
-				{branch1Length}
-
-				{branch2Growing}
-				{branch2Left}
-				{branch2Direction}
-				{branch2Length}
-			/>
+			<Tree {leftPosition} treeGround={rainGround} {isFirstBranchGrowing} {branches} />
 		</div>
 		<div id="box" on:click={toggleExpanded}>{expanded ? 'pluie' : 'rêve'}</div>
 	</div>
@@ -242,7 +300,7 @@
 	.central.expanded {
 		width: calc(100vh * var(--aspect-ratio));
 		height: 100vh;
-		background-color: lightyellow;
+		background-color: azure;
 		max-width: 100vw;
 		max-height: 100vh;
 	}

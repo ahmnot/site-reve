@@ -34,7 +34,7 @@
     }
   
     .stem {
-      width: 1px;
+      width: 5px;
       height: 60%;
       margin-left: 7px;
       animation: stem 0.5s linear infinite;

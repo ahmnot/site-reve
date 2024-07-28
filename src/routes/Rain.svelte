@@ -28,9 +28,8 @@
 				...drops,
 				{
 					left: position,
-					bottom: randoFiver + randoFiver - 1 + 100,
 					delay: initialDelay.toFixed(2),
-					duration: `0.5${randoHundo}`,
+					duration: `1.0${randoHundo}`,
 					color: rainColor,
 					top,
 					rainGround
@@ -41,9 +40,8 @@
 				...backDrops,
 				{
 					left: position,
-					bottom: randoFiver + randoFiver - 1 + 100,
 					delay: initialDelay.toFixed(2),
-					duration: `0.5${randoHundo}`,
+					duration: `0.8${randoHundo}`,
 					color: rainColor,
 					top,
 					rainGround
