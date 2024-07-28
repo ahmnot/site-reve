@@ -1,6 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import '../global.css';
+	import Level1 from './Level1.svelte';
 	import Ripple from './Ripple.svelte';
 	import FlippableCard from './FlippableCard.svelte';
 	import { startRipples, stopRipples, updateMousePosition } from '../lib/rippleStore.js';
@@ -9,9 +10,11 @@
 	import Negative from './Negative.svelte';
 </script>
 
-<div class="outer-container">
+<Level1 />
+
+<!-- <div class="outer-container">
     <div class="grid-container">
-        <div>rêve</div>
+        <div class="top-left-div">rêve</div>
         <div></div>
         <div on:mousedown={startRipples} on:mouseup={stopRipples} on:mousemove={updateMousePosition}>
             <Ripple />
@@ -38,9 +41,20 @@
             <ThreeWorld />
         </div>
     </div>
-</div>
+</div> -->
 
 <style>
+    .top-left-div {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        backface-visibility: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5em;
+    }
+
     .outer-container {
         display: flex;
         justify-content: center;
@@ -60,9 +74,7 @@
     }
 
     .grid-container > div {
-        background-color: bisque;
-        border-right: 1px dashed grey;
-        border-bottom: 1px dashed grey;
+        background-color: floralwhite;
         position: relative; /* Needed for ripple effect */
         overflow: hidden; /* Hide overflow for ripple effect */
     }
