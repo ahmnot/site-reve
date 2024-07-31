@@ -2,24 +2,27 @@
 	import Branch from './Branch.svelte';
 
 	export let treeGround = '0';
-    export let leftPosition = '50%';
+	export let leftPosition = '50%';
 	export let isFirstBranchGrowing = false;
 	export let branches = [
 		{
 			id: 1,
 			length: '50px',
 			direction: '0deg',
+			x: 0,
+			y: 0,
 			branches: [
 				{
 					id: 2,
 					length: '17.5vw',
 					direction: '90deg',
+					x: 0,
+					y: 50,
 					branches: []
 				}
 			]
 		}
 	];
-
 
 	setTimeout(() => {
 		branches[0].branches[0].growing = true;
@@ -32,19 +35,22 @@
 			<Branch
 				length={branch.length}
 				direction={branch.direction}
+				x={branch.x}
+				y={branch.y}
 				branches={branch.branches}
 				growing={isFirstBranchGrowing}
+				color={branch.color}
 			/>
 		{/each}
 	</div>
 </div>
 
 <style>
-    .first-branch-container {
-        position: absolute;
-        bottom: 0;
-        transform-origin: bottom center;
-    }
+	.first-branch-container {
+		position: absolute;
+		bottom: 0;
+		transform-origin: bottom center;
+	}
 
 	.tree {
 		position: absolute;

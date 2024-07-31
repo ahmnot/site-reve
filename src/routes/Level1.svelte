@@ -4,6 +4,7 @@
 	import Rain from './Rain.svelte';
 	import Matter from 'matter-js';
 	import Tree from './Tree.svelte';
+	import Nuage from './Nuage.svelte';
 
 	let rainColor = 'rgba(176, 224, 230, 0.5)';
 	let isRaining = false;
@@ -148,90 +149,163 @@
 
 	let isFirstBranchGrowing = false;
 
-// Function to generate branches with alternating 90/-90 degree angles
-function generateBranches(numBranches, depth = 3) {
-	const branches = [];
-	let initialLength = 10; // Initial length of the first branch
-	let currentLength = initialLength;
-	let currentDirection = 0;
-	let lengthDecrementFactor = 0.98; // Factor to decrement the length exponentially
-	let inSpiralMode = false; // Flag to track spiral mode
-	let leafProbability = 0.2; // Probability of creating a leaf
-	let spiralProbability = 0.05;
-	let branchOnBranchProbability = 0.01; // Probability of creating a branch on an existing branch
+	// Function to generate branches with alternating degree angles
+	function generateBranches(numBranches, depth = 3, baseId = '', baseBranchAngle = 0) {
+		const branches = [];
+		let initialLength = 40; // Initial length of the first branch
+		let currentLength = initialLength;
+		let rotationToAdd = baseBranchAngle;
+		let lengthDecrementFactor = 0.98; // Factor to decrement the length exponentially
+		let inSpiralMode = false; // Flag to track spiral mode
+		let leafProbability = 0.2; // Probability of creating a leaf
+		let spiralProbability = 0.05;
+		let branchOnBranchProbability = 0.01; // Probability of creating a branch on an existing branch
+		let flowerProbability = 0.005;
 
-	function createBranch(id, length, direction, color = 'darkgoldenrod') {
-		return {
-			id: id,
-			length: `${length}vw`,
-			direction: `${direction}deg`,
-			color: color,
-			branches: []
-		};
-	}
+		function createBranch(
+			id,
+			length,
+			direction,
+			color = 'darkgoldenrod'
+		) {
+			return {
+				id: id,
+				length: `${length}px`,
+				direction: `${direction}deg`,
+				absoluteAngle,
+				rotationToAdd,
+				color: color,
+				branches: []
+			};
+		}
 
-	function createLeaf(parentId) {
-		return {
-			id: `${parentId}-side`,
-			length: `15px`,
-			direction: `${Math.random() < 0.5 ? 90 : -90}deg`,
-			color: 'forestgreen',
-			branches: []
-		};
-	}
+		function createLeaf(parentId, color = 'forestgreen', length = '15px') {
+			const uniqueId = `${parentId}-leaf-${Math.random().toString(36).substr(2, 9)}`;
+			return {
+				id: uniqueId,
+				length,
+				direction: `${Math.random() < 0.5 ? 90 : -90}deg`,
+				color,
+				branches: []
+			};
+		}
 
-	let parentBranch = createBranch(1, currentLength, currentDirection);
-	branches.push(parentBranch);
+		let absoluteAngle = 0;
 
-	for (let i = 2; i <= numBranches; i++) {
-		currentLength *= lengthDecrementFactor; 
-		let currentDirection;
-		if (i <= 5) {
-			currentDirection = i % 2 === 0 ? 90 : -90;
-		} else {
+		let parentBranch = createBranch(
+			`${baseId}-1`,
+			currentLength,
+			rotationToAdd
+		);
+		branches.push(parentBranch);
+
+		for (let i = 2; i <= numBranches; i++) {
+			currentLength *= lengthDecrementFactor;
+			let rotationToAdd;
+
 			if (i <= 9) {
-				currentDirection = i % 2 === 0 ? -90 : 90;
+				rotationToAdd = i % 2 === 0 ? 90 : -90;
 			} else {
-				if (Math.random() < spiralProbability) {
-					inSpiralMode = !inSpiralMode;
-				}
-
-				if (inSpiralMode) {
-					currentDirection = 90;
+				if (i <= 15) {
+					switch (i) {
+						case 10:
+							rotationToAdd = 0;
+							break;
+						case 11:
+							rotationToAdd = 0;
+							break;
+						case 12:
+							rotationToAdd = Math.random() < 0.5 ? -22.5 : -11.25;
+							break;
+						case 13:
+							rotationToAdd = 0;
+							break;
+						case 14:
+							rotationToAdd = 0;
+							break;
+						case 15:
+							rotationToAdd = 20;
+							break;
+						default:
+							break;
+					}
 				} else {
-					currentDirection = Math.random() < 0.5 ? 90 : -90;
+					if (Math.random() < spiralProbability) {
+						inSpiralMode = !inSpiralMode;
+					}
+
+					if (inSpiralMode) {
+						rotationToAdd = 90;
+					} else {
+						rotationToAdd = Math.random() < 0.5 ? 45 : -45;
+					}
 				}
+			}
+
+			// Controle de la direction générale de la branche
+			if (Math.abs(absoluteAngle + rotationToAdd) > 90) {
+				rotationToAdd = 0;
+			}
+
+			absoluteAngle += rotationToAdd;
+			absoluteAngle %= 360;
+
+			const newBranch = createBranch(
+				`${baseId}-${i}`,
+				currentLength,
+				rotationToAdd
+			);
+
+			parentBranch.branches.push(newBranch);
+
+			// Occasionally create a leaf
+			if (Math.random() < leafProbability) {
+				const sideBranch = createLeaf(newBranch.id);
+				newBranch.branches.push(sideBranch);
+			}
+
+			// Occasionally create a gold flower
+			if (Math.random() < flowerProbability) {
+				const sideBranch = createLeaf(newBranch.id, 'palegoldenrod', '12px');
+				newBranch.branches.push(sideBranch);
+			}
+
+			// Occasionally create a new set of branches on an existing branch
+			if (depth > 0 && Math.random() < branchOnBranchProbability) {
+				newBranch.branches.push(
+					...generateBranches(
+						Math.floor(numBranches / 2),
+						depth - 1,
+						`${baseId}-${i}`,
+						absoluteAngle
+					)
+				);
+			}
+
+			// Update the parentBranch to the newly created branch
+			parentBranch = newBranch;
+
+			// Ensure the last branch has a colord leaf
+			if (i === numBranches) {
+				const coloredLeaf = createLeaf(
+					newBranch.id,
+					Math.random() < 0.5 ? 'thistle' : 'mistyrose',
+					'12px'
+				);
+				newBranch.branches.push(coloredLeaf);
 			}
 		}
 
-		const newBranch = createBranch(i, currentLength, currentDirection);
-		parentBranch.branches.push(newBranch);
-
-		// Occasionally create a side branch
-		if (Math.random() < leafProbability) {
-			const sideBranch = createLeaf(newBranch.id);
-			newBranch.branches.push(sideBranch);
-		}
-
-		// Occasionally create a new set of branches on an existing branch
-		if (depth > 0 && Math.random() < branchOnBranchProbability) {
-			newBranch.branches.push(...generateBranches(Math.floor(numBranches / 2), depth - 1));
-		}
-
-		// Update the parentBranch to the newly created branch
-		parentBranch = newBranch;
+		return branches;
 	}
 
-	return branches;
-}
-
-let branches = generateBranches(200);
+	let branches = generateBranches(200);
 </script>
 
 <div class="outer-container">
 	<div class="central" class:expanded>
 		<div id="cloud" class:hidden={!expanded}>
-			☁️
+			<Nuage />
 			{#if isRaining}
 				<Rain top="45%" width="80%" left="5%" {rainGround} {rainColor} />
 			{/if}
@@ -247,10 +321,8 @@ let branches = generateBranches(200);
 		position: relative;
 		top: -40%;
 		left: -25%;
-		width: 100px;
 		display: flex;
 		justify-content: center;
-		font-size: 5em;
 		transition: opacity 0.2s ease-in-out;
 		user-select: none;
 	}
@@ -274,6 +346,8 @@ let branches = generateBranches(200);
 		user-select: none;
 		overflow: hidden;
 		cursor: pointer;
+		font-family: 'Minecraft', sans-serif;
+		font-size: 0.8em;
 	}
 
 	.outer-container {
