@@ -6,7 +6,7 @@
 	import Tree from './Tree.svelte';
 	import Nuage from './Nuage.svelte';
 
-	let isRaining = false;
+	let isRaining = true;
 	let expanded = true;
 	let engine;
 	let box;
@@ -157,7 +157,9 @@
 
 	let leftPosition = '50%';
 
-	let isFirstBranchGrowing = false;
+	let isFirstBranchGrowing = true;
+	// Global flag to ensure the magic flower is generated only once
+	let magicFlowerGenerated = false;
 
 	// Function to generate a tree with alternating degree angles
 	function generateBranches(config) {
@@ -176,7 +178,6 @@
 			spiralProbability = 0.01,
 			initialBranchOnBranchProbability = 0.8,
 			branchOnBranchProbabilityDecrementFactor = 0.98,
-			sideFlowerProbability = 0.005
 		} = config;
 
 		const branches = [];
@@ -263,19 +264,25 @@
 					length: `${getRandomValue(14, 15)}px`,
 					rotation: `${Math.random() < 0.5 ? 90 : -90}deg`,
 					color: 'forestgreen',
+					windIntensity: getRandomValue(0,3)/(widthDecrementFactor*0.9),
 					branches: []
 				});
 			}
 
-			if (Math.random() < sideFlowerProbability) {
+			// Generate the magic flower approximately at 2/3 of the main branch
+			if (!magicFlowerGenerated && i >= Math.floor(2 * numberOfBranches / 3) && depth == 4) {
 				newBranch.branches.push({
 					id: `${newBranch.id}-flower-${Math.random().toString(36).substr(2, 9)}`,
-					width: `${getRandomValue(8, 10)}px`,
-					length: `${getRandomValue(8, 15)}px`,
+					zIndex: 2147483646,
+					width: '20px',
+					length: '20px',
 					rotation: `${Math.random() < 0.5 ? 90 : -90}deg`,
 					color: 'palegoldenrod',
+					holographic: true,
+					windIntensity: getRandomValue(0,3)/(widthDecrementFactor*0.9),
 					branches: []
 				});
+				magicFlowerGenerated = true;
 			}
 
 			let newSetOfBranchesAngle =
@@ -289,7 +296,7 @@
 						baseId: `${baseId}-${i}`,
 						branchAngleLimitation: 10,
 						initialBranchAngle: newSetOfBranchesAngle,
-						initialBranchWidth: 10,
+						initialBranchWidth: 5,
 						initialBranchLength: 20,
 						angleDecrementFactor: 0.98,
 						lengthDecrementFactor: 0.95,
@@ -298,7 +305,6 @@
 						spiralProbability: 0.15,
 						initialBranchOnBranchProbability: 0.01,
 						branchOnBranchProbabilityDecrementFactor: 0.5,
-						sideFlowerProbability: 0.015
 					})
 				);
 			}
@@ -331,10 +337,9 @@
 		widthDecrementFactor: 0.9,
 		lengthDecrementFactor: 0.97,
 		leafProbability: 0,
-		spiralProbability: 0.01,
+		spiralProbability: 0,
 		initialBranchOnBranchProbability: 0.4,
 		branchOnBranchProbabilityDecrementFactor: 1.05,
-		sideFlowerProbability: 0.005
 	});
 
 	let rainGround = '70vh'; // La position du sol de la pluie
