@@ -7,13 +7,15 @@
 	export let branches = [
 		{
 			id: 1,
+			width: '10px',
 			length: '50px',
-			direction: '0deg',
+			rotation: '0deg',
 			branches: [
 				{
 					id: 2,
+					width: '10px',
 					length: '17.5vw',
-					direction: '90deg',
+					rotation: '90deg',
 					branches: []
 				}
 			]
@@ -26,11 +28,13 @@
 </script>
 
 <div class="tree" style="--treeGround: {treeGround};">
-	<div class="first-branch-container" style="left: {leftPosition}; transform: rotate({branches[0].direction});">
+	<div class="first-branch-container" style="left: {leftPosition}; transform: rotate({branches[0].rotation});">
 		{#each branches as branch (branch.id)}
 			<Branch
+				zIndex={branch.zIndex}
+				width={branch.width}
 				length={branch.length}
-				direction={branch.direction}
+				rotation={branch.rotation}
 				branches={branch.branches}
 				growing={isFirstBranchGrowing}
 				color={branch.color}
@@ -48,7 +52,7 @@
 
 	.tree {
 		position: absolute;
-		bottom: -11.5%;
+		bottom: -77%;
 		transform: translateY(var(--treeGround));
 	}
 </style>

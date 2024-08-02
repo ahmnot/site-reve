@@ -1,6 +1,6 @@
 <script>
-    import { onMount } from 'svelte';
-
+    export let zIndex;
+    export let width;
     export let length;
     export let rotation;
     export let branches = [];
@@ -12,7 +12,7 @@
     $: if (growing) {
         setTimeout(() => {
             branchDoneGrowing = true;
-        }, 50);
+        }, 20);
     }
 
 </script>
@@ -20,11 +20,13 @@
 <div
     class="branch"
     class:growing
-    style="--branchLength: {length}; --color: {color};"
+    style="z-index: {zIndex}; --branchWidth: {width}; --branchLength: {length}; --color: {color};"
 >
     {#each branches as branch (branch.id)}
         <div class="branch-container" style="bottom: {length}; transform: rotate({branch.rotation});">
             <svelte:self
+                zIndex={branch.zIndex}
+                width={branch.width}
                 length={branch.length}
                 rotation={branch.rotation}
                 branches={branch.branches}
@@ -43,7 +45,8 @@
     }
 
     .branch {
-        width: 10px;
+        position: relative;
+        width: var(--branchWidth);
         height: 0;
         background: var(--color);
         transition: height 0.05s ease-out;
