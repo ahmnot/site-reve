@@ -6,7 +6,7 @@
 	import Tree from './Tree.svelte';
 	import Nuage from './Nuage.svelte';
 
-	let isRaining = true;
+	let isRaining = false;
 	let expanded = true;
 	let engine;
 	let box;
@@ -121,7 +121,7 @@
 				isRaining = true;
 				setInterval(() => (isFirstBranchGrowing = true), 1000);
 			} else {
-				isRaining = true;
+				isRaining = false;
 			}
 
 			box.render();
@@ -157,7 +157,7 @@
 
 	let leftPosition = '50%';
 
-	let isFirstBranchGrowing = true;
+	let isFirstBranchGrowing = false;
 
 	// Function to generate a tree with alternating degree angles
 	function generateBranches(config) {
@@ -197,8 +197,8 @@
 			length: `${currentLength}px`,
 			rotation: `${rotationToAdd}deg`,
 			absoluteAngle,
-			rotationToAdd,
 			color: 'tan',
+			windIntensity: 0,
 			branches: []
 		};
 
@@ -248,8 +248,8 @@
 				length: `${currentLength}px`,
 				rotation: `${rotationToAdd}deg`,
 				absoluteAngle,
-				rotationToAdd,
 				color: 'tan',
+				windIntensity: getRandomValue(0,3)/(widthDecrementFactor*0.9),
 				branches: []
 			};
 

@@ -38,6 +38,7 @@
 				branches={branch.branches}
 				growing={isFirstBranchGrowing}
 				color={branch.color}
+                windIntensity={branch.windIntensity}
 			/>
 		{/each}
 	</div>
