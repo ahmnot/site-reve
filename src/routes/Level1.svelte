@@ -7,8 +7,8 @@
 	import Nuage from './Nuage.svelte';
 
 	let rainColor = 'rgba(176, 224, 230, 0.5)';
-	let isRaining = false;
-	let expanded = false;
+	let isRaining = true;
+	let expanded = true;
 	let engine;
 	let box;
 	let isFirstClick = true;
@@ -122,7 +122,7 @@
 				isRaining = true;
 				setInterval(() => (isFirstBranchGrowing = true), 1000);
 			} else {
-				isRaining = false;
+				isRaining = true;
 			}
 
 			box.render();
@@ -143,35 +143,46 @@
 		engine.gravity.y = 1;
 	}
 
+	// Function to pick a random value with a random sign
+	function getRandomValueWithSign(valuesToPickFrom) {
+		const randomIndex = Math.floor(Math.random() * valuesToPickFrom.length);
+		const randomValue = valuesToPickFrom[randomIndex];
+		const randomSign = Math.random() < 0.5 ? -1 : 1;
+		return randomValue * randomSign;
+	}
+
 	let leftPosition = '50%';
 
 	let rainGround = '70vh'; // La position du sol de la pluie
 
-	let isFirstBranchGrowing = false;
+	let isFirstBranchGrowing = true;
 
-	// Function to generate branches with alternating degree angles
-	function generateBranches(numBranches, depth = 3, baseId = '', baseBranchAngle = 0) {
+	// Function to generate a tree with alternating degree angles
+	function generateBranches(config) {
+		const {
+			numberOfBranches = 40,
+			depth = 3,
+			baseId = '',
+			baseBranchAngle = 0,
+			branchAngleLimitation = 5,
+			initialBranchLength = 40,
+			lengthDecrementFactor = 0.97,
+			leafProbability = 0.2,
+			spiralProbability = 0.025,
+			branchOnBranchProbability = 0.05,
+			sideFlowerProbability = 0.005
+		} = config;
+
 		const branches = [];
-		let initialLength = 40; // Initial length of the first branch
-		let currentLength = initialLength;
+		let currentLength = initialBranchLength;
 		let rotationToAdd = baseBranchAngle;
-		let lengthDecrementFactor = 0.98; // Factor to decrement the length exponentially
 		let inSpiralMode = false; // Flag to track spiral mode
-		let leafProbability = 0.2; // Probability of creating a leaf
-		let spiralProbability = 0.05;
-		let branchOnBranchProbability = 0.01; // Probability of creating a branch on an existing branch
-		let flowerProbability = 0.005;
 
-		function createBranch(
-			id,
-			length,
-			direction,
-			color = 'darkgoldenrod'
-		) {
+		function createBranch(id, length, rotation, color = 'darkgoldenrod') {
 			return {
 				id: id,
 				length: `${length}px`,
-				direction: `${direction}deg`,
+				rotation: `${rotation}deg`,
 				absoluteAngle,
 				rotationToAdd,
 				color: color,
@@ -184,7 +195,7 @@
 			return {
 				id: uniqueId,
 				length,
-				direction: `${Math.random() < 0.5 ? 90 : -90}deg`,
+				rotation: `${Math.random() < 0.5 ? 90 : -90}deg`,
 				color,
 				branches: []
 			};
@@ -192,69 +203,44 @@
 
 		let absoluteAngle = 0;
 
-		let parentBranch = createBranch(
-			`${baseId}-1`,
-			currentLength,
-			rotationToAdd
-		);
+		let parentBranch = createBranch(`${baseId}-1`, currentLength, rotationToAdd);
 		branches.push(parentBranch);
 
-		for (let i = 2; i <= numBranches; i++) {
+		let spirallingCount = 0;
+
+		for (let i = 2; i <= numberOfBranches; i++) {
 			currentLength *= lengthDecrementFactor;
 			let rotationToAdd;
 
-			if (i <= 9) {
+			if (i <= 3) {
 				rotationToAdd = i % 2 === 0 ? 90 : -90;
 			} else {
-				if (i <= 15) {
-					switch (i) {
-						case 10:
-							rotationToAdd = 0;
-							break;
-						case 11:
-							rotationToAdd = 0;
-							break;
-						case 12:
-							rotationToAdd = Math.random() < 0.5 ? -22.5 : -11.25;
-							break;
-						case 13:
-							rotationToAdd = 0;
-							break;
-						case 14:
-							rotationToAdd = 0;
-							break;
-						case 15:
-							rotationToAdd = 20;
-							break;
-						default:
-							break;
-					}
-				} else {
-					if (Math.random() < spiralProbability) {
-						inSpiralMode = !inSpiralMode;
-					}
-
-					if (inSpiralMode) {
-						rotationToAdd = 90;
-					} else {
-						rotationToAdd = Math.random() < 0.5 ? 45 : -45;
-					}
-				}
+				rotationToAdd = getRandomValueWithSign([2.8125, 5.625, 11.25, 22.5, 45]);
 			}
 
 			// Controle de la direction générale de la branche
-			if (Math.abs(absoluteAngle + rotationToAdd) > 90) {
+			// Si branchAngleLimitation = 90, la branche va dans la direction générale de l'axe de sa première branche
+			if (Math.abs(absoluteAngle + rotationToAdd) > branchAngleLimitation) {
 				rotationToAdd = 0;
+			}
+
+			if (!inSpiralMode && Math.random() < spiralProbability) {
+				inSpiralMode = true;
+				spirallingCount = 0; // Reset the spiral counter
+			}
+
+			if (inSpiralMode) {
+				rotationToAdd = 90;
+				spirallingCount++;
+				if (spirallingCount >= 4) {
+					inSpiralMode = false; // Exit spiral mode after 4 branches
+				}
 			}
 
 			absoluteAngle += rotationToAdd;
 			absoluteAngle %= 360;
 
-			const newBranch = createBranch(
-				`${baseId}-${i}`,
-				currentLength,
-				rotationToAdd
-			);
+			const newBranch = createBranch(`${baseId}-${i}`, currentLength, rotationToAdd);
 
 			parentBranch.branches.push(newBranch);
 
@@ -265,20 +251,32 @@
 			}
 
 			// Occasionally create a gold flower
-			if (Math.random() < flowerProbability) {
+			if (Math.random() < sideFlowerProbability) {
 				const sideBranch = createLeaf(newBranch.id, 'palegoldenrod', '12px');
 				newBranch.branches.push(sideBranch);
 			}
 
+			// Initialise les branches qui poussent sur la branche principale à 0° par rapport à l'axe des ordonnées
+			let newSetOfBranchesAngle = -absoluteAngle;
+
+			newSetOfBranchesAngle += 90;
+
 			// Occasionally create a new set of branches on an existing branch
 			if (depth > 0 && Math.random() < branchOnBranchProbability) {
 				newBranch.branches.push(
-					...generateBranches(
-						Math.floor(numBranches / 2),
-						depth - 1,
-						`${baseId}-${i}`,
-						absoluteAngle
-					)
+					...generateBranches({
+						numberOfBranches: Math.floor(numberOfBranches / 2),
+						depth: depth - 1,
+						baseId: `${baseId}-${i}`,
+						baseBranchAngle: newSetOfBranchesAngle,
+						branchAngleLimitation: 20,
+						initialBranchLength: 20,
+						lengthDecrementFactor: 0.96,
+						leafProbability: 0.5,
+						spiralProbability: 0.1,
+						branchOnBranchProbability: 0.01,
+						sideFlowerProbability: 0.1
+					})
 				);
 			}
 
@@ -286,7 +284,7 @@
 			parentBranch = newBranch;
 
 			// Ensure the last branch has a colord leaf
-			if (i === numBranches) {
+			if (i === numberOfBranches) {
 				const coloredLeaf = createLeaf(
 					newBranch.id,
 					Math.random() < 0.5 ? 'thistle' : 'mistyrose',
@@ -299,7 +297,7 @@
 		return branches;
 	}
 
-	let branches = generateBranches(200);
+	let branches = generateBranches({ numberOfBranches: 40 });
 </script>
 
 <div class="outer-container">

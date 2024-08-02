@@ -2,16 +2,12 @@
     import { onMount } from 'svelte';
 
     export let length;
-    export let direction;
+    export let rotation;
     export let branches = [];
     export let growing = false;
     export let color = 'darkgoldenrod';
 
     let branchDoneGrowing = false;
-    let tooltipText = '';
-    let tooltipX = 0;
-    let tooltipY = 0;
-    let showTooltip = false;
 
     $: if (growing) {
         setTimeout(() => {
@@ -27,10 +23,10 @@
     style="--branchLength: {length}; --color: {color};"
 >
     {#each branches as branch (branch.id)}
-        <div class="branch-container" style="bottom: {length}; transform: rotate({branch.direction});">
+        <div class="branch-container" style="bottom: {length}; transform: rotate({branch.rotation});">
             <svelte:self
                 length={branch.length}
-                direction={branch.direction}
+                rotation={branch.rotation}
                 branches={branch.branches}
                 growing={branchDoneGrowing}
                 color={branch.color}

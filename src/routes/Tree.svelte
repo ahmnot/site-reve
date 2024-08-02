@@ -9,15 +9,11 @@
 			id: 1,
 			length: '50px',
 			direction: '0deg',
-			x: 0,
-			y: 0,
 			branches: [
 				{
 					id: 2,
 					length: '17.5vw',
 					direction: '90deg',
-					x: 0,
-					y: 50,
 					branches: []
 				}
 			]
@@ -35,8 +31,6 @@
 			<Branch
 				length={branch.length}
 				direction={branch.direction}
-				x={branch.x}
-				y={branch.y}
 				branches={branch.branches}
 				growing={isFirstBranchGrowing}
 				color={branch.color}
