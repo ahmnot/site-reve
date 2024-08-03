@@ -158,14 +158,17 @@
 	let leftPosition = '50%';
 
 	let isFirstBranchGrowing = true;
+
 	// Global flag to ensure the magic flower is generated only once
 	let magicFlowerGenerated = false;
+
+	let trunkNumberOfBranches = 30;
 
 	// Function to generate a tree with alternating degree angles
 	function generateBranches(config) {
 		const {
 			numberOfBranches = 40,
-			depth = 3,
+			depth = 4,
 			baseId = '',
 			branchAngleLimitation = 5,
 			initialBranchAngle = 0,
@@ -175,12 +178,12 @@
 			widthDecrementFactor = 0.9,
 			lengthDecrementFactor = 0.97,
 			leafProbability = 0,
-			spiralProbability = 0.01,
+			spiralProbability = 0,
 			initialBranchOnBranchProbability = 0.8,
 			branchOnBranchProbabilityDecrementFactor = 0.98,
 		} = config;
 
-		const branches = [];
+		const allTheBranches = [];
 
 		let rotationToAdd = initialBranchAngle;
 		let currentWidth = initialBranchWidth;
@@ -200,12 +203,14 @@
 			absoluteAngle,
 			color: 'tan',
 			windIntensity: 0,
-			branches: []
+			childBranches: []
 		};
 
-		branches.push(parentBranch);
+		allTheBranches.push(parentBranch);
 
 		let spirallingCount = 0;
+
+		let trunkBranchPosition = 0;
 
 		for (let i = 2; i <= numberOfBranches; i++) {
 			currentWidth *= widthDecrementFactor;
@@ -242,7 +247,7 @@
 			absoluteAngle += rotationToAdd;
 			absoluteAngle %= 360;
 
-			const newBranch = {
+			const childBranch = {
 				id: `${baseId}-${i}`,
 				zIndex: 0,
 				width: `${currentWidth}px`,
@@ -251,36 +256,36 @@
 				absoluteAngle,
 				color: 'tan',
 				windIntensity: getRandomValue(0,3)/(widthDecrementFactor*0.9),
-				branches: []
+				childBranches: []
 			};
 
-			parentBranch.branches.push(newBranch);
+			parentBranch.childBranches.push(childBranch);
 
 			if (Math.random() < leafProbability) {
-				newBranch.branches.push({
-					id: `${newBranch.id}-leaf-${Math.random().toString(36).substr(2, 9)}`,
+				childBranch.childBranches.push({
+					id: `${childBranch.id}-leaf-${Math.random().toString(36).substr(2, 9)}`,
 					zIndex: 999,
 					width: `${getRandomValue(8, 10)}px`,
 					length: `${getRandomValue(14, 15)}px`,
 					rotation: `${Math.random() < 0.5 ? 90 : -90}deg`,
 					color: 'forestgreen',
 					windIntensity: getRandomValue(0,3)/(widthDecrementFactor*0.9),
-					branches: []
+					childBranches: []
 				});
 			}
 
 			// Generate the magic flower approximately at 2/3 of the main branch
-			if (!magicFlowerGenerated && i >= Math.floor(2 * numberOfBranches / 3) && depth == 4) {
-				newBranch.branches.push({
-					id: `${newBranch.id}-flower-${Math.random().toString(36).substr(2, 9)}`,
+			if (!magicFlowerGenerated && i >= Math.floor(2 * trunkNumberOfBranches / 3) && depth == 3) {
+				childBranch.childBranches.push({
+					id: `${childBranch.id}-flower-${Math.random().toString(36).substr(2, 9)}`,
 					zIndex: 2147483646,
 					width: '20px',
 					length: '20px',
 					rotation: `${Math.random() < 0.5 ? 90 : -90}deg`,
 					color: 'palegoldenrod',
 					holographic: true,
-					windIntensity: getRandomValue(0,3)/(widthDecrementFactor*0.9),
-					branches: []
+					windIntensity: getRandomValue(0, 3)/(widthDecrementFactor*0.9),
+					childBranches: []
 				});
 				magicFlowerGenerated = true;
 			}
@@ -289,9 +294,9 @@
 				-absoluteAngle + getRandomValueWithSign([10, 20, 45].map((a) => a * angleDecrementFactor));
 
 			if (depth > 0 && Math.random() < currentBranchOnBranchProbability) {
-				newBranch.branches.push(
+				childBranch.childBranches.push(
 					...generateBranches({
-						numberOfBranches: Math.floor(numberOfBranches / 2),
+						numberOfBranches: Math.floor(numberOfBranches / 1.5),
 						depth: depth - 1,
 						baseId: `${baseId}-${i}`,
 						branchAngleLimitation: 10,
@@ -301,35 +306,36 @@
 						angleDecrementFactor: 0.98,
 						lengthDecrementFactor: 0.95,
 						widthDecrementFactor: 0.85,
-						leafProbability: 0.95,
-						spiralProbability: 0.15,
+						leafProbability: 0.98,
+						spiralProbability: 0.1,
 						initialBranchOnBranchProbability: 0.01,
 						branchOnBranchProbabilityDecrementFactor: 0.5,
 					})
 				);
 			}
 
-			parentBranch = newBranch;
+			parentBranch = childBranch;
 
 			if (i === numberOfBranches) {
-				newBranch.branches.push({
-					id: `${newBranch.id}-leaf-${Math.random().toString(36).substr(2, 9)}`,
+				childBranch.childBranches.push({
+					id: `${childBranch.id}-leaf-${Math.random().toString(36).substr(2, 9)}`,
 					width: '10px',
 					length: '12px',
 					rotation: `${Math.random() < 0.5 ? 90 : -90}deg`,
 					color: Math.random() < 0.5 ? 'thistle' : 'mistyrose',
-					branches: []
+					childBranches: []
 				});
 			}
 		}
 
-		return branches;
+		return allTheBranches;
 	}
-	let branches = generateBranches({
-		numberOfBranches: 30,
+
+	let allTheBranches = generateBranches({
+		numberOfBranches: trunkNumberOfBranches,
 		depth: 4,
 		baseId: '',
-		branchAngleLimitation: 45,
+		branchAngleLimitation: 10,
 		initialBranchAngle: 0,
 		initialBranchWidth: 40,
 		initialBranchLength: 40,
@@ -339,7 +345,7 @@
 		leafProbability: 0,
 		spiralProbability: 0,
 		initialBranchOnBranchProbability: 0.4,
-		branchOnBranchProbabilityDecrementFactor: 1.05,
+		branchOnBranchProbabilityDecrementFactor: 1.1,
 	});
 
 	let rainGround = '70vh'; // La position du sol de la pluie
@@ -353,7 +359,7 @@
 				<Rain top="40%" width="80%" left="3%" {rainGround} rainColor="rgba(176, 224, 230, 0.2)" />
 			{/if}
 
-			<Tree {leftPosition} treeGround={rainGround} {isFirstBranchGrowing} {branches} />
+			<Tree {leftPosition} treeGround={rainGround} {isFirstBranchGrowing} {allTheBranches} />
 		</div>
 		<div id="box" on:click={toggleExpanded}>{expanded ? 'pluie' : 'rêve'}</div>
 	</div>

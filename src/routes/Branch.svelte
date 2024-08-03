@@ -4,7 +4,7 @@
 	export let width;
 	export let length;
 	export let rotation;
-	export let branches = [];
+	export let childBranches = [];
 	export let growing = false;
 	export let color = 'darkgoldenrod';
 	export let windIntensity = 0;
@@ -36,7 +36,7 @@
 	class:holographic
 	style="--branchWidth: {width}; --branchLength: {length}; --color: {color}; --windIntensity: {windIntensity}px; --randomDelay: {getRandomDelay()}s;"
 >
-	{#each branches as branch (branch.id)}
+	{#each childBranches as branch (branch.id)}
 		<div
 			class="branch-container"
 			style="bottom: {length}; transform: rotate({branch.rotation}); z-index: {branch.zIndex}"
@@ -46,7 +46,7 @@
 				width={branch.width}
 				length={branch.length}
 				rotation={branch.rotation}
-				branches={branch.branches}
+				childBranches={branch.childBranches}
 				growing={branchDoneGrowing}
 				color={branch.color}
 				windIntensity={branch.windIntensity}
