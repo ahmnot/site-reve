@@ -6,7 +6,7 @@
 	import Tree from './Tree.svelte';
 	import Nuage from './Nuage.svelte';
 
-	let isRaining = true;
+	let isRaining = false;
 	let expanded = true;
 	let engine;
 	let box;
@@ -41,7 +41,14 @@
 			isStatic: true
 		});
 
-		const mouseConstraint = Matter.MouseConstraint.create(engine, { element: document.body });
+		const mouse = Matter.Mouse.create(document.body);
+		const mouseConstraint = Matter.MouseConstraint.create(engine, {
+			mouse: mouse,
+			constraint: {
+				render: { visible: false },
+				stiffness: 0.8
+			}
+		});
 
 		Matter.Composite.add(engine.world, [
 			boxBody,
@@ -130,6 +137,31 @@
 		};
 
 		render();
+
+		const boxElem = document.querySelector('#box');
+
+		const handleMouseUp = () => {
+			isGrabbing = false;
+			boxElem.style.cursor = 'grab';
+			document.body.style.cursor = 'default';
+			document.removeEventListener('mousemove', handleMouseMove);
+			document.removeEventListener('mouseup', handleMouseUp);
+		};
+
+		const handleMouseMove = () => {
+			if (isGrabbing) {
+				boxElem.style.cursor = 'grabbing';
+				document.body.style.cursor = 'grabbing';
+			}
+		};
+
+		boxElem.addEventListener('mousedown', () => {
+			isGrabbing = true;
+			boxElem.style.cursor = 'grabbing';
+			document.body.style.cursor = 'grabbing';
+			document.addEventListener('mousemove', handleMouseMove);
+			document.addEventListener('mouseup', handleMouseUp);
+		});
 	});
 
 	function toggleExpanded() {
@@ -155,9 +187,16 @@
 		return Math.random() * (max - min) + min;
 	}
 
+	// Unique ID generator using a counter
+	let idCounter = 0;
+	function generateUniqueId(prefix = '') {
+		idCounter += 1;
+		return `${prefix}-${idCounter}`;
+	}
+
 	let leftPosition = '50%';
 
-	let isFirstBranchGrowing = true;
+	let isFirstBranchGrowing = false;
 
 	// Global flag to ensure the magic flower is generated only once
 	let magicFlowerGenerated = false;
@@ -166,6 +205,8 @@
 	const initialDepth = 4;
 
 	let trunkBranchPosition = 0;
+
+	let newSetOfBranchesAngle;
 
 	// Function to generate a tree with alternating degree angles
 	function generateBranches(config) {
@@ -187,52 +228,31 @@
 		} = config;
 
 		const finalBranches = [];
-
 		let rotationToAdd = initialBranchAngle;
 		let currentWidth = initialBranchWidth;
 		let currentLength = initialBranchLength;
-
 		let currentBranchOnBranchProbability = initialBranchOnBranchProbability;
-
-		let inSpiralMode = false; // Flag to track spiral mode
-
+		let inSpiralMode = false;
 		let absoluteAngle = 0;
-
-		let parentBranch = {};
+		let spirallingCount = 0;
 
 		let magicFlowerCondition =
 			depth == initialDepth - 1 &&
 			!magicFlowerGenerated &&
 			trunkBranchPosition > Math.floor((2 * trunkNumberOfBranches) / 3) - 2;
 
-		// The special branch which is going to hold the magic flower
-		if (magicFlowerCondition) {
-			parentBranch = {
-				id: `${baseId}-1`,
-				zIndex: 999,
-				width: `${currentWidth}px`,
-				length: '4vw',
-				rotation: '90deg',
-				color: 'tan',
-				windIntensity: 0,
-				childBranches: []
-			};
-		} else {
-			parentBranch = {
-				id: `${baseId}-1`,
-				zIndex: 0,
-				width: `${currentWidth}px`,
-				length: `${currentLength}px`,
-				rotation: `${rotationToAdd}deg`,
-				color: 'tan',
-				windIntensity: 0,
-				childBranches: []
-			};
-		}
+		let parentBranch = {
+			id: generateUniqueId(baseId),
+			zIndex: magicFlowerCondition ? 999 : 0,
+			width: `${currentWidth}px`,
+			length: magicFlowerCondition ? '4vw' : `${currentLength}px`,
+			rotation: magicFlowerCondition ? '90deg' : `${rotationToAdd}deg`,
+			color: 'tan',
+			windIntensity: 0,
+			childBranches: []
+		};
 
 		finalBranches.push(parentBranch);
-
-		let spirallingCount = 0;
 
 		for (let i = 0; i < numberOfBranches; i++) {
 			if (depth == initialDepth) {
@@ -241,91 +261,89 @@
 
 			currentWidth *= widthDecrementFactor;
 			currentLength *= lengthDecrementFactor;
-
 			currentBranchOnBranchProbability *= branchOnBranchProbabilityDecrementFactor;
 
-			// Stop rotation for the last 4 segments of the special branch
-				rotationToAdd = getRandomValueWithSign([2.8125, 5.625, 11.25, 22.5, 45, 90]);
+			rotationToAdd = getRandomValueWithSign([2.8125, 5.625, 11.25, 22.5, 45, 90]);
 
-				// Control the general direction of the branch
-				if (Math.abs(absoluteAngle + rotationToAdd) > branchAngleLimitation) {
-					rotationToAdd = 0;
-				}
+			// Control the general direction of the branch
+			if (Math.abs(absoluteAngle + rotationToAdd) > branchAngleLimitation) {
+				rotationToAdd = 0;
+			}
 
-				if (!inSpiralMode && Math.random() < spiralProbability) {
-					inSpiralMode = true;
-					spirallingCount = 0; // Reset the spiral counter
-				}
+			if (!inSpiralMode && Math.random() < spiralProbability) {
+				inSpiralMode = true;
+				spirallingCount = 0;
+			}
 
-				if (inSpiralMode) {
-					rotationToAdd = 90;
-					spirallingCount++;
-					if (spirallingCount >= 4) {
-						inSpiralMode = false; // Exit spiral mode after 4 branches
-					}
-				} else {
-					rotationToAdd *= angleDecrementFactor;
+			if (inSpiralMode) {
+				rotationToAdd = 90;
+				spirallingCount++;
+				if (spirallingCount >= 4) {
+					inSpiralMode = false;
 				}
-			absoluteAngle += rotationToAdd;
-			absoluteAngle %= 360;
+			} else {
+				rotationToAdd *= angleDecrementFactor;
+			}
+
+			absoluteAngle = (absoluteAngle + rotationToAdd) % 360;
 
 			const childBranch = {
-				id: `${baseId}-${i}`,
+				id: generateUniqueId(baseId),
 				zIndex: 5,
 				width: `${currentWidth}px`,
 				length: `${currentLength}px`,
 				rotation: `${rotationToAdd}deg`,
 				color: 'tan',
-				windIntensity: getRandomValue(0, 3) / (widthDecrementFactor * 0.9),
+				windIntensity: 2 / (widthDecrementFactor * 0.9),
 				childBranches: []
 			};
 
 			// Generate the magic flower on a special branch at approximately at 2/3 of the main branch, on the tip of that branch
 			if (magicFlowerCondition && i == numberOfBranches - 1) {
 				childBranch.childBranches.push({
-					id: `${childBranch.id}-flower-${Math.random().toString(36).slice(2, 9)}`,
+					id: generateUniqueId(`${childBranch.id}-flower`),
 					zIndex: 999,
 					width: '40px',
 					length: '40px',
 					rotation: `0deg`,
-					color: 'palegoldenrod',
 					holographic: true,
-					windIntensity: getRandomValue(0, 1) / (widthDecrementFactor * 0.9),
+					windIntensity: 2 / (widthDecrementFactor * 0.9),
 					childBranches: []
 				});
 				magicFlowerGenerated = true;
 			}
 
-			// Add leaves to the first segments of the special branch
+			// The i < 7 is here to prevent leaves overlapping the magic flower
 			if (magicFlowerCondition && i < 7) {
 				childBranch.childBranches.push({
-					id: `${childBranch.id}-leaf-${Math.random().toString(36).slice(2, 9)}`,
+					id: generateUniqueId(`${childBranch.id}-leaf`),
 					zIndex: 50,
 					width: `${getRandomValue(8, 10)}px`,
 					length: `${getRandomValue(14, 15)}px`,
 					rotation: `${Math.random() < 0.5 ? 90 : -90}deg`,
 					color: 'forestgreen',
-					windIntensity: getRandomValue(0, 1) / (widthDecrementFactor * 0.9),
+					windIntensity: 1 / (widthDecrementFactor * 0.9),
 					childBranches: []
 				});
 			}
 
 			parentBranch.childBranches.push(childBranch);
 
-			if (Math.random() < leafProbability && !magicFlowerCondition) {
+			// Generating leaves when not on magic flower branch
+			if (!magicFlowerCondition && Math.random() < leafProbability) {
 				childBranch.childBranches.push({
-					id: `${childBranch.id}-leaf-${Math.random().toString(36).slice(2, 9)}`,
-					zIndex: 50,
+					id: generateUniqueId(`${childBranch.id}-leaf`),
+					zIndex: 100,
 					width: `${getRandomValue(8, 10)}px`,
 					length: `${getRandomValue(14, 15)}px`,
 					rotation: `${Math.random() < 0.5 ? 90 : -90}deg`,
 					color: 'forestgreen',
-					windIntensity: getRandomValue(0, 1) / (widthDecrementFactor * 0.9),
+					windIntensity: 2 / (widthDecrementFactor * 0.9),
 					childBranches: []
 				});
 			}
 
-			let newSetOfBranchesAngle =
+			newSetOfBranchesAngle =
 				-absoluteAngle + getRandomValueWithSign([10, 20, 45].map((a) => a * angleDecrementFactor));
 
 			if (depth > 0 && Math.random() < currentBranchOnBranchProbability) {
@@ -343,7 +361,7 @@
 						widthDecrementFactor: 0.85,
 						leafProbability: 0.98,
 						spiralProbability: 0.1,
-						initialBranchOnBranchProbability: 0.01,
+						initialBranchOnBranchProbability: 0.02,
 						branchOnBranchProbabilityDecrementFactor: 0.5
 					})
 				);
@@ -351,14 +369,13 @@
 
 			parentBranch = childBranch;
 
-			//
 			if (i === numberOfBranches - 2 && !magicFlowerCondition) {
 				childBranch.childBranches.push({
-					id: `${childBranch.id}-leaf-${Math.random().toString(36).slice(2, 9)}`,
+					id: generateUniqueId(`${childBranch.id}-leaf`),
 					zIndex: 100,
 					width: '10px',
 					length: '12px',
-					rotation: `${Math.random() < 0.5 ? 90 : -90}deg`,
+					rotation: `-90deg`,
 					color: Math.random() < 0.5 ? 'thistle' : 'mistyrose',
 					childBranches: []
 				});
@@ -398,7 +415,7 @@
 
 			<Tree {leftPosition} treeGround={rainGround} {isFirstBranchGrowing} {allTheBranches} />
 		</div>
-		<div id="box" on:click={toggleExpanded}>{expanded ? 'pluie' : 'rêve'}</div>
+		<button id="box" on:click={toggleExpanded}>{expanded ? 'pluie' : 'rêve'}</button>
 	</div>
 </div>
 
@@ -434,6 +451,8 @@
 		cursor: pointer;
 		font-family: 'Minecraft', sans-serif;
 		font-size: 0.8em;
+		border: none;
+		background: none;
 	}
 
 	.outer-container {

@@ -1,5 +1,5 @@
 <script>
-	import { onMount } from 'svelte';
+	import { onDestroy } from 'svelte';
 	export let zIndex;
 	export let width;
 	export let length;
@@ -13,23 +13,21 @@
 	let branchDoneGrowing = false;
 
 	$: if (growing) {
-		setTimeout(() => {
+		const timer = setTimeout(() => {
 			branchDoneGrowing = true;
 		}, 20);
+
+		onDestroy(() => clearTimeout(timer));
 	}
 
-	function getRandomDelay() {
-		return Math.random() * 4; // Random delay between 0 and 4 seconds
-	}
-
-
+	const randomDelay = Math.random() * 4; // Generate random delay once
 </script>
 
 <div
 	class="branch"
 	class:growing
 	class:holographic
-	style="--branchWidth: {width}; --branchLength: {length}; --color: {color}; --windIntensity: {windIntensity}px; --randomDelay: {getRandomDelay()}s;"
+	style="--branchWidth: {width}; --branchLength: {length}; --color: {color}; --windIntensity: {windIntensity}px; --randomDelay: {randomDelay}s;"
 >
 	{#each childBranches as branch (branch.id)}
 		<div
@@ -52,14 +50,6 @@
 </div>
 
 <style>
-	:root {
-		--sunpillar-1: hsl(2, 100%, 73%);
-		--sunpillar-2: hsl(53, 100%, 69%);
-		--sunpillar-3: hsl(93, 100%, 69%);
-		--sunpillar-4: hsl(176, 100%, 76%);
-		--sunpillar-5: hsl(228, 100%, 74%);
-		--sunpillar-6: hsl(283, 100%, 73%);
-	}
 
 	@keyframes sway {
 		0% {
@@ -78,7 +68,7 @@
 			transform: translateX(calc(var(--windIntensity) * 0.4));
 		}
 		80% {
-			transform: translateX(calc(var(--windIntensity) * 0.01));
+			transform: translateX(calc(var(--windIntensity) * 0.1));
 		}
 		100% {
 			transform: translateX(0);
@@ -108,12 +98,12 @@
 	.branch.holographic {
 		background-image: linear-gradient(
 			135deg,
-			var(--sunpillar-1),
-			var(--sunpillar-2),
-			var(--sunpillar-3),
-			var(--sunpillar-4),
-			var(--sunpillar-5),
-			var(--sunpillar-6)
+			hsl(2, 100%, 73%),
+			hsl(53, 100%, 69%),
+			hsl(93, 100%, 69%),
+			hsl(176, 100%, 76%),
+			hsl(228, 100%, 74%),
+			hsl(283, 100%, 73%)
 		);
 		background-size: 400% 400%;
 		animation: holographic 5s ease infinite;
