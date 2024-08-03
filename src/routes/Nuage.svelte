@@ -27,7 +27,7 @@
   
   <style>
     .cloud {
-      --square-size: 7.5px;
+      --square-size: 7px;
       display: grid;
       grid-template-columns: repeat(16, var(--square-size));
     }
