@@ -219,7 +219,6 @@
 				trunkBranchPosition = i;
 			}
 
-			console.log(trunkBranchPosition);
 			currentWidth *= widthDecrementFactor;
 			currentLength *= lengthDecrementFactor;
 
