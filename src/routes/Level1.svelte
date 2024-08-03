@@ -198,17 +198,37 @@
 
 		let absoluteAngle = 0;
 
-		let parentBranch = {
-			id: `${baseId}-1`,
-			zIndex: 0,
-			width: `${currentWidth}px`,
-			length: `${currentLength}px`,
-			rotation: `${rotationToAdd}deg`,
-			absoluteAngle,
-			color: 'tan',
-			windIntensity: 0,
-			childBranches: []
-		};
+		let parentBranch = {};
+
+		let magicFlowerCondition =
+			depth == initialDepth - 1 &&
+			!magicFlowerGenerated &&
+			trunkBranchPosition > Math.floor((2 * trunkNumberOfBranches) / 3) - 2;
+
+		// The special branch which is going to hold the magic flower
+		if (magicFlowerCondition) {
+			parentBranch = {
+				id: `${baseId}-1`,
+				zIndex: 999,
+				width: `${currentWidth}px`,
+				length: '4vw',
+				rotation: '90deg',
+				color: 'tan',
+				windIntensity: 0,
+				childBranches: []
+			};
+		} else {
+			parentBranch = {
+				id: `${baseId}-1`,
+				zIndex: 0,
+				width: `${currentWidth}px`,
+				length: `${currentLength}px`,
+				rotation: `${rotationToAdd}deg`,
+				color: 'tan',
+				windIntensity: 0,
+				childBranches: []
+			};
+		}
 
 		finalBranches.push(parentBranch);
 
@@ -224,28 +244,28 @@
 
 			currentBranchOnBranchProbability *= branchOnBranchProbabilityDecrementFactor;
 
-			rotationToAdd = getRandomValueWithSign([2.8125, 5.625, 11.25, 22.5, 45, 90]);
+			// Stop rotation for the last 4 segments of the special branch
+				rotationToAdd = getRandomValueWithSign([2.8125, 5.625, 11.25, 22.5, 45, 90]);
 
-			// Control the general direction of the branch
-			if (Math.abs(absoluteAngle + rotationToAdd) > branchAngleLimitation) {
-				rotationToAdd = 0;
-			}
-
-			if (!inSpiralMode && Math.random() < spiralProbability) {
-				inSpiralMode = true;
-				spirallingCount = 0; // Reset the spiral counter
-			}
-
-			if (inSpiralMode) {
-				rotationToAdd = 90;
-				spirallingCount++;
-				if (spirallingCount >= 4) {
-					inSpiralMode = false; // Exit spiral mode after 4 branches
+				// Control the general direction of the branch
+				if (Math.abs(absoluteAngle + rotationToAdd) > branchAngleLimitation) {
+					rotationToAdd = 0;
 				}
-			} else {
-				rotationToAdd *= angleDecrementFactor;
-			}
 
+				if (!inSpiralMode && Math.random() < spiralProbability) {
+					inSpiralMode = true;
+					spirallingCount = 0; // Reset the spiral counter
+				}
+
+				if (inSpiralMode) {
+					rotationToAdd = 90;
+					spirallingCount++;
+					if (spirallingCount >= 4) {
+						inSpiralMode = false; // Exit spiral mode after 4 branches
+					}
+				} else {
+					rotationToAdd *= angleDecrementFactor;
+				}
 			absoluteAngle += rotationToAdd;
 			absoluteAngle %= 360;
 
@@ -255,38 +275,44 @@
 				width: `${currentWidth}px`,
 				length: `${currentLength}px`,
 				rotation: `${rotationToAdd}deg`,
-				absoluteAngle,
 				color: 'tan',
 				windIntensity: getRandomValue(0, 3) / (widthDecrementFactor * 0.9),
 				childBranches: []
 			};
 
 			// Generate the magic flower on a special branch at approximately at 2/3 of the main branch, on the tip of that branch
-			if (
-				depth == initialDepth - 1 &&
-				!magicFlowerGenerated &&
-				trunkBranchPosition > Math.floor((2 * trunkNumberOfBranches) / 3) - 2 &&
-				i == numberOfBranches - 1
-			) {
+			if (magicFlowerCondition && i == numberOfBranches - 1) {
 				childBranch.childBranches.push({
 					id: `${childBranch.id}-flower-${Math.random().toString(36).slice(2, 9)}`,
 					zIndex: 999,
 					width: '40px',
 					length: '40px',
-					rotation: `${Math.random() < 0.5 ? 90 : -90}deg`,
+					rotation: `0deg`,
 					color: 'palegoldenrod',
 					holographic: true,
 					windIntensity: getRandomValue(0, 1) / (widthDecrementFactor * 0.9),
 					childBranches: []
 				});
 				magicFlowerGenerated = true;
-			} else {
+			}
 
+			// Add leaves to the first segments of the special branch
+			if (magicFlowerCondition && i < 7) {
+				childBranch.childBranches.push({
+					id: `${childBranch.id}-leaf-${Math.random().toString(36).slice(2, 9)}`,
+					zIndex: 50,
+					width: `${getRandomValue(8, 10)}px`,
+					length: `${getRandomValue(14, 15)}px`,
+					rotation: `${Math.random() < 0.5 ? 90 : -90}deg`,
+					color: 'forestgreen',
+					windIntensity: getRandomValue(0, 1) / (widthDecrementFactor * 0.9),
+					childBranches: []
+				});
 			}
 
 			parentBranch.childBranches.push(childBranch);
 
-			if (Math.random() < leafProbability) {
+			if (Math.random() < leafProbability && !magicFlowerCondition) {
 				childBranch.childBranches.push({
 					id: `${childBranch.id}-leaf-${Math.random().toString(36).slice(2, 9)}`,
 					zIndex: 50,
@@ -326,7 +352,7 @@
 			parentBranch = childBranch;
 
 			//
-			if (i === numberOfBranches - 2) {
+			if (i === numberOfBranches - 2 && !magicFlowerCondition) {
 				childBranch.childBranches.push({
 					id: `${childBranch.id}-leaf-${Math.random().toString(36).slice(2, 9)}`,
 					zIndex: 100,
@@ -353,9 +379,9 @@
 		angleDecrementFactor: 0.75,
 		widthDecrementFactor: 0.9,
 		lengthDecrementFactor: 0.97,
-		leafProbability: 0,
+		leafProbability: 0.01,
 		spiralProbability: 0,
-		initialBranchOnBranchProbability: 0.4,
+		initialBranchOnBranchProbability: 0.3,
 		branchOnBranchProbabilityDecrementFactor: 1.1
 	});
 

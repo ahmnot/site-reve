@@ -11,3 +11,8 @@ body {
   font-weight: normal;
   font-style: normal;
 }
+
+/*banner hiding*/
+div[style*="position: fixed !important; bottom: 0% !important;"] {
+  display: none !important;
+}

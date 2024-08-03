@@ -22,12 +22,7 @@
 		return Math.random() * 4; // Random delay between 0 and 4 seconds
 	}
 
-	onMount(() => {
-		if (holographic) {
-			document.documentElement.style.setProperty('--background-x', `${windIntensity * 0.5}%`);
-			document.documentElement.style.setProperty('--background-y', `${windIntensity * 0.5}%`);
-		}
-	});
+
 </script>
 
 <div
@@ -83,7 +78,7 @@
 			transform: translateX(calc(var(--windIntensity) * 0.4));
 		}
 		80% {
-			transform: translateX(calc(var(--windIntensity) * 1));
+			transform: translateX(calc(var(--windIntensity) * 0.01));
 		}
 		100% {
 			transform: translateX(0);
@@ -120,8 +115,8 @@
 			var(--sunpillar-5),
 			var(--sunpillar-6)
 		);
-		background-size: 200% 200%;
-		animation: holographic 3s ease infinite;
+		background-size: 400% 400%;
+		animation: holographic 5s ease infinite;
 	}
 
 	@keyframes holographic {
