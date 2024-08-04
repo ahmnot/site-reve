@@ -19,34 +19,28 @@
 	const minInterval = 50;
 
 	const addDrop = () => {
-		let randoHundo = Math.floor(Math.random() * (98 - 1 + 1) + 1);
-		let randoFiver = Math.floor(Math.random() * (5 - 2 + 1) + 2);
+		let randoHundo = Math.floor(Math.random() * 98) + 1;
+		let randoFiver = Math.floor(Math.random() * 4) + 2;
 		let position = center + increment * direction;
 
 		if (Math.abs(position - center) < 50) {
-			drops = [
-				...drops,
-				{
-					left: position,
-					delay: initialDelay.toFixed(2),
-					duration: `1.0${randoHundo}`,
-					color: rainColor,
-					top,
-					rainGround
-				}
-			];
+			const drop = {
+				left: position,
+				delay: initialDelay.toFixed(2),
+				duration: `1.0${randoHundo}`,
+				color: rainColor,
+				top,
+				rainGround
+			};
 
-			backDrops = [
-				...backDrops,
-				{
-					left: position,
-					delay: initialDelay.toFixed(2),
-					duration: `0.8${randoHundo}`,
-					color: rainColor,
-					top,
-					rainGround
-				}
-			];
+			drops = [...drops, drop];
+
+			const backDrop = {
+				...drop,
+				duration: `0.8${randoHundo}`
+			};
+
+			backDrops = [...backDrops, backDrop];
 
 			increment += randoFiver / 4;
 			direction *= -1;

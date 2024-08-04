@@ -18,7 +18,9 @@
 	}
 
 	function handleStartBranchGrowing() {
-		isFirstBranchGrowing = true;
+		setTimeout(() => {
+			isFirstBranchGrowing = true;
+		}, 5000);
 	}
 
 	// Unique ID generator using a counter
@@ -248,10 +250,22 @@
 
 <div class="outer-container">
 	<div class="central" class:expanded>
-		<BoxWithTarget {isRaining} {expanded} toggleExpanded={toggleExpanded} on:triggerEvent={handleStartBranchGrowing}>
+		<BoxWithTarget
+			{isRaining}
+			{expanded}
+			{toggleExpanded}
+			on:triggerEvent={handleStartBranchGrowing}
+		>
 			<Nuage slot="boxTarget" />
-			<Rain slot="appearsWhenBoxInBoxTarget" top="40%" width="80%" left="3%" rainGround="75vh" rainColor="rgba(176, 224, 230, 0.2)" />
-			<Tree leftPosition='50%' treeGround="75vh" {isFirstBranchGrowing} {allTheBranches} />
+			<Rain
+				slot="appearsWhenBoxInBoxTarget"
+				top="40%"
+				width="80%"
+				left="3%"
+				rainGround="75vh"
+				rainColor="rgba(176, 224, 230, 0.2)"
+			/>
+			<Tree leftPosition="50%" treeGround="75vh" {isFirstBranchGrowing} {allTheBranches} />
 		</BoxWithTarget>
 	</div>
 </div>

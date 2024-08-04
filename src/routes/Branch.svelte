@@ -58,17 +58,11 @@
 		20% {
 			transform: translateX(calc(var(--windIntensity) * 0.2));
 		}
-		40% {
-			transform: translateX(calc(var(--windIntensity) * 0.4));
-		}
 		50% {
-			transform: translateX(calc(var(--windIntensity) * 0.7));
+			transform: translateX(calc(var(--windIntensity) * 0.5));
 		}
 		60% {
-			transform: translateX(calc(var(--windIntensity) * 0.4));
-		}
-		80% {
-			transform: translateX(calc(var(--windIntensity) * 0.1));
+			transform: translateX(calc(var(--windIntensity) * 0.2));
 		}
 		100% {
 			transform: translateX(0);
