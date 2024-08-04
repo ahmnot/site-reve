@@ -106,7 +106,7 @@
 			hsl(283, 100%, 73%)
 		);
 		background-size: 400% 400%;
-		animation: holographic 5s ease infinite;
+		animation: holographic 5s ease-in-out infinite;
 	}
 
 	@keyframes holographic {

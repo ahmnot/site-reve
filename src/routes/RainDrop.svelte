@@ -81,7 +81,7 @@
       }
       100% {
         opacity: 0;
-        transform: scale(1.5);
+        transform: scale(2);
       }
     }
   </style>

@@ -21,10 +21,6 @@
 			]
 		}
 	];
-
-	setTimeout(() => {
-		allTheBranches[0].childBranches[0].growing = true;
-	}, 100);
 </script>
 
 <div class="tree" style="--treeGround: {treeGround};">
@@ -53,7 +49,7 @@
 
 	.tree {
 		position: absolute;
-		bottom: -77%;
-		transform: translateY(var(--treeGround));
+		bottom: 0%;
+        transform: translateY(var(--treeGround));
 	}
 </style>
