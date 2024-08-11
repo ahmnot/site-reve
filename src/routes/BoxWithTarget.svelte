@@ -8,10 +8,10 @@
 
 	const dispatch = createEventDispatcher();
 
-	let engine;
 	let box;
 	let isGrabbing = false;
 	let ground, leftWall, rightWall, ceiling;
+	let engine;
 
 	$: if (expanded && box && engine) {
 		Matter.Body.setStatic(box.body, false);
@@ -20,13 +20,13 @@
 
 	onMount(() => {
 		engine = Matter.Engine.create();
-		engine.gravity.y = 0.002;
+		engine.gravity.y = 0.001;
 
 		const boxBody = Matter.Bodies.rectangle(window.innerWidth / 2, window.innerHeight / 2, 50, 50);
 
 		ground = Matter.Bodies.rectangle(
 			window.innerWidth / 2,
-			window.innerHeight + 10,
+			window.innerHeight - 10,
 			window.innerWidth,
 			20,
 			{ isStatic: true }
@@ -63,9 +63,11 @@
 			mouseConstraint
 		]);
 
+		const boxElem = document.querySelector('#box');
+
 		box = {
 			body: boxBody,
-			elem: document.querySelector('#box'),
+			elem: boxElem,
 			render() {
 				const { x, y } = this.body.position;
 				this.elem.style.top = `${y - 25}px`;
@@ -142,8 +144,6 @@
 
 		render();
 
-		const boxElem = document.querySelector('#box');
-
 		const handleMouseUp = () => {
 			isGrabbing = false;
 			boxElem.style.cursor = 'grab';
@@ -182,7 +182,6 @@
 
 <style>
 	:root {
-		--aspect-ratio: calc(9 / 16);
 		overflow: hidden;
 	}
 

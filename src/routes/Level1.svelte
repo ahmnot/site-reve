@@ -8,7 +8,7 @@
 	let isRaining = false;
 	let expanded = true;
 	let isFirstClick = true;
-	let isFirstBranchGrowing = false;
+	let isFirstBranchGrowing = true;
 
 	function toggleExpanded() {
 		if (isFirstClick) {
@@ -43,11 +43,8 @@
 		return Math.random() * (max - min) + min;
 	}
 
-	// Global flag to ensure the magic flower is generated only once
-	let magicFlowerGenerated = false;
-
-	const trunkNumberOfBranches = 25;
-	const initialDepth = 4;
+	// Global flag to ensure the magic seed is generated only once
+	let magicSeedGenerated = false;
 
 	let trunkBranchPosition = 0;
 
@@ -56,20 +53,21 @@
 	// Function to generate a tree with alternating degree angles
 	function generateBranches(config) {
 		const {
-			numberOfBranches = trunkNumberOfBranches,
-			depth = initialDepth,
-			baseId = '',
-			branchAngleLimitation = 5,
-			initialBranchAngle = 0,
-			initialBranchWidth = 40,
-			initialBranchLength = 40,
-			angleDecrementFactor = 0.98,
-			widthDecrementFactor = 0.9,
-			lengthDecrementFactor = 0.97,
-			leafProbability = 0,
-			spiralProbability = 0,
-			initialBranchOnBranchProbability = 0.8,
-			branchOnBranchProbabilityDecrementFactor = 0.98
+			numberOfBranches,
+			depth,
+			baseId,
+			branchAngleLimitation,
+			initialBranchAngle,
+			initialBranchWidth,
+			initialBranchLength,
+			angleDecrementFactor,
+			widthDecrementFactor,
+			lengthDecrementFactor,
+			leafProbability,
+			spiralProbability,
+			initialBranchOnBranchProbability,
+			branchOnBranchProbabilityDecrementFactor,
+			subBranchesFixedParameters = {}
 		} = config;
 
 		const finalBranches = [];
@@ -81,23 +79,25 @@
 		let absoluteAngle = 0;
 		let spirallingCount = 0;
 
-		let magicFlowerCondition =
+		let magicSeedCondition =
 			depth == initialDepth - 1 &&
-			!magicFlowerGenerated &&
+			!magicSeedGenerated &&
 			trunkBranchPosition > Math.floor((2 * trunkNumberOfBranches) / 3) - 2;
 
 		let parentBranch = {
 			id: generateUniqueId(baseId),
-			zIndex: magicFlowerCondition ? 999 : 0,
+			zIndex: magicSeedCondition ? 999 : 0,
 			width: `${currentWidth}px`,
-			length: magicFlowerCondition ? '4vw' : `${currentLength}px`,
-			rotation: magicFlowerCondition ? '90deg' : `${rotationToAdd}deg`,
+			length: magicSeedCondition ? '4vw' : `${currentLength}px`,
+			rotation: magicSeedCondition ? '90deg' : `${rotationToAdd}deg`,
 			color: 'tan',
-			windIntensity: 0,
+			windIntensity: `0px`,
 			childBranches: []
 		};
 
 		finalBranches.push(parentBranch);
+
+		let childBranch;
 
 		for (let i = 0; i < numberOfBranches; i++) {
 			if (depth == initialDepth) {
@@ -108,7 +108,10 @@
 			currentLength *= lengthDecrementFactor;
 			currentBranchOnBranchProbability *= branchOnBranchProbabilityDecrementFactor;
 
-			rotationToAdd = getRandomValueWithSign([2.8125, 5.625, 11.25, 22.5, 45, 90]);
+			rotationToAdd = getRandomValueWithSign(
+				[2.8125, 5.625, 11.25
+				//, 22.5, 45, 90
+				]);
 
 			// Control the general direction of the branch
 			if (Math.abs(absoluteAngle + rotationToAdd) > branchAngleLimitation) {
@@ -132,34 +135,33 @@
 
 			absoluteAngle = (absoluteAngle + rotationToAdd) % 360;
 
-			const childBranch = {
+			childBranch = {
 				id: generateUniqueId(baseId),
 				zIndex: 5,
 				width: `${currentWidth}px`,
 				length: `${currentLength}px`,
 				rotation: `${rotationToAdd}deg`,
 				color: 'tan',
-				windIntensity: 2 / (widthDecrementFactor * 0.9),
+				windIntensity: `2px`,
 				childBranches: []
 			};
 
-			// Generate the magic flower on a special branch at approximately at 2/3 of the main branch, on the tip of that branch
-			if (magicFlowerCondition && i == numberOfBranches - 1) {
+			// Generate the magic seed on a special branch at approximately at 2/3 of the main branch, on the tip of that branch
+			if (magicSeedCondition && i == numberOfBranches - 1) {
 				childBranch.childBranches.push({
-					id: generateUniqueId(`${childBranch.id}-flower`),
+					id: generateUniqueId(`${childBranch.id}-seed`),
 					zIndex: 999,
-					width: '40px',
-					length: '40px',
-					rotation: `0deg`,
+					width: '50px',
+					length: '50px',
+					rotation: absoluteAngle,
 					holographic: true,
-					windIntensity: 2 / (widthDecrementFactor * 0.9),
-					childBranches: []
+					windIntensity: `2px`
 				});
-				magicFlowerGenerated = true;
+				magicSeedGenerated = true;
 			}
 
-			// The i < 7 is here to prevent leaves overlapping the magic flower
-			if (magicFlowerCondition && i < 7) {
+			// The i < 7 is here to prevent leaves overlapping the magic seed
+			if (magicSeedCondition && i < 7) {
 				childBranch.childBranches.push({
 					id: generateUniqueId(`${childBranch.id}-leaf`),
 					zIndex: 50,
@@ -174,8 +176,8 @@
 
 			parentBranch.childBranches.push(childBranch);
 
-			// Generating leaves when not on magic flower branch
-			if (!magicFlowerCondition && Math.random() < leafProbability) {
+			// Generating leaves when not on magic seed branch
+			if (!magicSeedCondition && Math.random() < leafProbability) {
 				childBranch.childBranches.push({
 					id: generateUniqueId(`${childBranch.id}-leaf`),
 					zIndex: 100,
@@ -197,24 +199,15 @@
 						numberOfBranches: Math.floor(numberOfBranches / 1.5),
 						depth: depth - 1,
 						baseId: `${baseId}-${i}`,
-						branchAngleLimitation: 10,
 						initialBranchAngle: newSetOfBranchesAngle,
-						initialBranchWidth: 5,
-						initialBranchLength: 20,
-						angleDecrementFactor: 0.98,
-						lengthDecrementFactor: 0.95,
-						widthDecrementFactor: 0.85,
-						leafProbability: 0.98,
-						spiralProbability: 0.1,
-						initialBranchOnBranchProbability: 0.02,
-						branchOnBranchProbabilityDecrementFactor: 0.5
+						...subBranchesFixedParameters
 					})
 				);
 			}
 
 			parentBranch = childBranch;
 
-			if (i === numberOfBranches - 2 && !magicFlowerCondition) {
+			if (i === numberOfBranches - 2 && !magicSeedCondition) {
 				childBranch.childBranches.push({
 					id: generateUniqueId(`${childBranch.id}-leaf`),
 					zIndex: 100,
@@ -228,6 +221,22 @@
 		}
 
 		return finalBranches;
+	}
+
+	const trunkNumberOfBranches = 25;
+	const initialDepth = 2;
+
+	const subBranchesFixedParameters = {
+		branchAngleLimitation: 25,
+		initialBranchWidth: 5,
+		initialBranchLength: 20,
+		angleDecrementFactor: 0.98,
+		lengthDecrementFactor: 0.95,
+		widthDecrementFactor: 0.85,
+		leafProbability: 0.98,
+		spiralProbability: 0.1,
+		initialBranchOnBranchProbability: 0.02,
+		branchOnBranchProbabilityDecrementFactor: 0.5
 	}
 
 	let allTheBranches = generateBranches({
@@ -244,7 +253,8 @@
 		leafProbability: 0.01,
 		spiralProbability: 0,
 		initialBranchOnBranchProbability: 0.3,
-		branchOnBranchProbabilityDecrementFactor: 1.1
+		branchOnBranchProbabilityDecrementFactor: 1.1,
+		subBranchesFixedParameters
 	});
 </script>
 
@@ -265,7 +275,7 @@
 				rainGround="75vh"
 				rainColor="rgba(176, 224, 230, 0.2)"
 			/>
-			<Tree leftPosition="50%" treeGround="75vh" {isFirstBranchGrowing} {allTheBranches} />
+			<Tree leftPosition="50%" treeGround="80vh" {isFirstBranchGrowing} {allTheBranches} />
 		</BoxWithTarget>
 	</div>
 </div>
@@ -273,7 +283,6 @@
 <style>
 	:root {
 		--aspect-ratio: calc(9 / 16);
-		overflow: hidden;
 	}
 
 	.outer-container {
@@ -288,11 +297,6 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		width: calc(33vh * var(--aspect-ratio));
-		height: 33vh;
-		max-width: calc(100vh * var(--aspect-ratio));
-		max-height: 100vh;
-		background-color: floralwhite;
 		font-size: 1.5em;
 		transition: all 0.5s ease-in-out;
 	}

@@ -26,6 +26,7 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"matter-attractors": "^0.1.6",
 		"matter-js": "^0.20.0",
 		"three": "^0.167.0"
 	}

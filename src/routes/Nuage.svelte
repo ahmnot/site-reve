@@ -27,14 +27,13 @@
   
   <style>
     .cloud {
-      --square-size: 7px;
       display: grid;
-      grid-template-columns: repeat(16, var(--square-size));
+      grid-template-columns: repeat(16, 7px);
     }
   
     .square {
-      width: var(--square-size);
-      height: var(--square-size);
+      width: 7px;
+      height: 7px;
     }
   
     .black {
