@@ -10,8 +10,9 @@
 	export let growing = false;
 	export let color = 'darkgoldenrod';
 	export let windIntensity = 0;
-	export let holographic = false;
+	export let magicseed = false;
 	export let parentLength = 0;
+	export let windy = true;
 
 	let branchDoneGrowing = false;
 
@@ -23,22 +24,21 @@
 		onDestroy(() => clearTimeout(timer));
 	}
 
-	const randomDelay = Math.random() * 4; // Generate random delay once
 </script>
 
-{#if holographic}
+{#if magicseed}
 	<MagicSeed {parentLength} {rotation} {growing} />
 {:else}
 	<div
 		class="branch"
 		class:growing
-		class:holographic
+		class:windy
+		class:magicseed
 		style="
 		width: {width};  
 		background: {color}; 
 		bottom: {parentLength}; 
 		transform: rotate({rotation});
-		animation-delay: {randomDelay}s;
 		z-index: {zIndex};
 		--windIntensity: {windIntensity}; 
 		--branchLength: {length};
@@ -55,7 +55,8 @@
 				growing={branchDoneGrowing}
 				color={branch.color}
 				windIntensity={branch.windIntensity}
-				holographic={branch.holographic}
+				magicseed={branch.magicseed}
+				windy={branch.windy}
 				parentLength={length}
 			/>
 		{/each}
@@ -78,9 +79,12 @@
 	.branch {
 		position: absolute;
 		height: 0;
-		transition: height 0.04s ease-out;
+		transition: height 0.05s ease-out;
 		transform-origin: bottom center;
 		will-change: transform, height;
+	}
+
+	.branch.windy {
 		animation: sway 5s ease-in-out infinite;
 	}
 
@@ -88,7 +92,7 @@
 		height: var(--branchLength);
 	}
 
-	.branch.holographic {
+	.branch.magicseed {
 		background-image: linear-gradient(
 			135deg,
 			hsl(2, 100%, 73%),

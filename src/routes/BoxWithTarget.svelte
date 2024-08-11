@@ -120,7 +120,7 @@
 			const targetPos = targetElem.getBoundingClientRect();
 			const targetCenter = {
 				x: targetPos.left + targetPos.width / 2,
-				y: targetPos.top + targetPos.height / 2
+				y: targetPos.top + targetPos.height / 2 + 7
 			};
 
 			const distance = Math.sqrt(

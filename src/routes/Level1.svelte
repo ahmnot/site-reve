@@ -142,11 +142,12 @@
 				length: `${currentLength}px`,
 				rotation: `${rotationToAdd}deg`,
 				color: 'tan',
-				windIntensity: `2px`,
+				windIntensity: `5px`,
+				windy: i % 7 == 0,
 				childBranches: []
 			};
 
-			// Generate the magic seed on a special branch at approximately at 2/3 of the main branch, on the tip of that branch
+			// Generation of magic seed on a special branch at approximately at 2/3 of the main branch, on the tip of that branch
 			if (magicSeedCondition && i == numberOfBranches - 1) {
 				childBranch.childBranches.push({
 					id: generateUniqueId(`${childBranch.id}-seed`),
@@ -154,13 +155,13 @@
 					width: '50px',
 					length: '50px',
 					rotation: absoluteAngle,
-					holographic: true,
+					magicseed: true,
 					windIntensity: `2px`
 				});
 				magicSeedGenerated = true;
 			}
 
-			// The i < 7 is here to prevent leaves overlapping the magic seed
+			// Leaves generated on magic branchThe i < 7 is here to prevent leaves overlapping the magic seed
 			if (magicSeedCondition && i < 7) {
 				childBranch.childBranches.push({
 					id: generateUniqueId(`${childBranch.id}-leaf`),
@@ -170,13 +171,14 @@
 					rotation: `${Math.random() < 0.5 ? 90 : -90}deg`,
 					color: 'forestgreen',
 					windIntensity: `${1 / (widthDecrementFactor * 0.95)}px`,
+					windy: i % 5 == 0,
 					childBranches: []
 				});
 			}
 
 			parentBranch.childBranches.push(childBranch);
 
-			// Generating leaves when not on magic seed branch
+			// Leaves generated when not on magic seed branch
 			if (!magicSeedCondition && Math.random() < leafProbability) {
 				childBranch.childBranches.push({
 					id: generateUniqueId(`${childBranch.id}-leaf`),
@@ -185,7 +187,8 @@
 					length: `${getRandomValue(12, 15)}px`,
 					rotation: `${Math.random() < 0.5 ? 90 : -90}deg`,
 					color: 'forestgreen',
-					windIntensity: `${1 / (widthDecrementFactor * 0.95)}px`,
+					windIntensity: `${2 / (widthDecrementFactor * 0.95)}px`,
+					windy: i % 9 == 0,
 					childBranches: []
 				});
 			}
