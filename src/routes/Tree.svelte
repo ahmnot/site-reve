@@ -2,7 +2,7 @@
 	import Branch from './Branch.svelte';
 
 	export let treeGround = '0';
-	export let leftPosition = '50%';
+	export let leftPosition = '85%';
 	export let isFirstBranchGrowing = false;
 	export let allTheBranches = [
 		{
@@ -23,33 +23,25 @@
 	];
 </script>
 
-<div class="tree" style="--treeGround: {treeGround};">
-	<div class="first-branch-container" style="left: {leftPosition}; transform: rotate({allTheBranches[0].rotation});">
-		{#each allTheBranches as branch (branch.id)}
-			<Branch
-				zIndex={branch.zIndex}
-				width={branch.width}
-				length={branch.length}
-				rotation={branch.rotation}
-				childBranches={branch.childBranches}
-				growing={isFirstBranchGrowing}
-				color={branch.color}
-                windIntensity={branch.windIntensity}
-			/>
-		{/each}
-	</div>
+<div class="tree" style="left: {leftPosition}; transform: translateY({treeGround}) rotate({allTheBranches[0].rotation});">
+	{#each allTheBranches as branch (branch.id)}
+		<Branch
+			zIndex={branch.zIndex}
+			width={branch.width}
+			length={branch.length}
+			rotation={branch.rotation}
+			childBranches={branch.childBranches}
+			growing={isFirstBranchGrowing}
+			color={branch.color}
+			windIntensity={branch.windIntensity}
+		/>
+	{/each}
 </div>
 
 <style>
-	.first-branch-container {
-		position: absolute;
-		bottom: 0;
-		transform-origin: bottom center;
-	}
-
 	.tree {
 		position: absolute;
 		bottom: 0%;
-        transform: translateY(var(--treeGround));
+		transform-origin: bottom center;
 	}
 </style>

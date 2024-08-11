@@ -169,7 +169,7 @@
 					length: `${getRandomValue(14, 15)}px`,
 					rotation: `${Math.random() < 0.5 ? 90 : -90}deg`,
 					color: 'forestgreen',
-					windIntensity: 1 / (widthDecrementFactor * 0.9),
+					windIntensity: `${1 / (widthDecrementFactor * 0.95)}px`,
 					childBranches: []
 				});
 			}
@@ -185,7 +185,7 @@
 					length: `${getRandomValue(12, 15)}px`,
 					rotation: `${Math.random() < 0.5 ? 90 : -90}deg`,
 					color: 'forestgreen',
-					windIntensity: 2 / (widthDecrementFactor * 0.9),
+					windIntensity: `${1 / (widthDecrementFactor * 0.95)}px`,
 					childBranches: []
 				});
 			}
@@ -207,7 +207,7 @@
 
 			parentBranch = childBranch;
 
-			if (i === numberOfBranches - 2 && !magicSeedCondition) {
+			if (i === numberOfBranches - 1 && !magicSeedCondition) {
 				childBranch.childBranches.push({
 					id: generateUniqueId(`${childBranch.id}-leaf`),
 					zIndex: 100,
@@ -215,6 +215,7 @@
 					length: '12px',
 					rotation: `-90deg`,
 					color: Math.random() < 0.5 ? 'thistle' : 'mistyrose',
+					windIntensity: '10px',
 					childBranches: []
 				});
 			}
@@ -234,7 +235,7 @@
 		lengthDecrementFactor: 0.95,
 		widthDecrementFactor: 0.85,
 		leafProbability: 0.98,
-		spiralProbability: 0.1,
+		spiralProbability: 0.05,
 		initialBranchOnBranchProbability: 0.02,
 		branchOnBranchProbabilityDecrementFactor: 0.5
 	}
@@ -252,8 +253,8 @@
 		lengthDecrementFactor: 0.97,
 		leafProbability: 0.01,
 		spiralProbability: 0,
-		initialBranchOnBranchProbability: 0.3,
-		branchOnBranchProbabilityDecrementFactor: 1.1,
+		initialBranchOnBranchProbability: 0.05,
+		branchOnBranchProbabilityDecrementFactor: 1.6,
 		subBranchesFixedParameters
 	});
 </script>

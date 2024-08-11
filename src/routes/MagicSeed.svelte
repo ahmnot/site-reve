@@ -1,17 +1,13 @@
 <script>
 	export let growing = false;
 	export let rotation;
+	export let parentLength;
 	let fallen = false;
-
-	let engine;
-	let seedBody;
 
 	function handleClick() {
 		fallen = true;
 		console.log('handle seed falling');
 	}
-
-
 </script>
 
 <div
@@ -20,11 +16,14 @@
 	class:growing
 	class:fallen
 	on:click={handleClick}
+	style="
+		bottom: {parentLength};
+	"
 ></div>
 
 <style>
 	.magic-seed {
-		position: relative;
+		position: absolute;
 		width: 50px;
 		height: 0;
 		transition:

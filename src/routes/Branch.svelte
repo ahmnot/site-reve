@@ -11,6 +11,7 @@
 	export let color = 'darkgoldenrod';
 	export let windIntensity = 0;
 	export let holographic = false;
+	export let parentLength = 0;
 
 	let branchDoneGrowing = false;
 
@@ -26,31 +27,37 @@
 </script>
 
 {#if holographic}
-	<MagicSeed {rotation} {growing} />
+	<MagicSeed {parentLength} {rotation} {growing} />
 {:else}
 	<div
 		class="branch"
 		class:growing
 		class:holographic
-		style="--branchWidth: {width}; --branchLength: {length}; --color: {color}; --windIntensity: {windIntensity}; --randomDelay: {randomDelay}s;"
+		style="
+		width: {width};  
+		background: {color}; 
+		bottom: {parentLength}; 
+		transform: rotate({rotation});
+		animation-delay: {randomDelay}s;
+		z-index: {zIndex};
+		--windIntensity: {windIntensity}; 
+		--branchLength: {length};
+		--rotation: {rotation};
+		"
 	>
 		{#each childBranches as branch (branch.id)}
-			<div
-				class="branch-container"
-				style="bottom: {length}; transform: rotate({branch.rotation}); z-index: {branch.zIndex}"
-			>
-				<svelte:self
-					zIndex={branch.zIndex}
-					width={branch.width}
-					length={branch.length}
-					rotation={branch.rotation}
-					childBranches={branch.childBranches}
-					growing={branchDoneGrowing}
-					color={branch.color}
-					windIntensity={branch.windIntensity}
-					holographic={branch.holographic}
-				/>
-			</div>
+			<svelte:self
+				zIndex={branch.zIndex}
+				width={branch.width}
+				length={branch.length}
+				rotation={branch.rotation}
+				childBranches={branch.childBranches}
+				growing={branchDoneGrowing}
+				color={branch.color}
+				windIntensity={branch.windIntensity}
+				holographic={branch.holographic}
+				parentLength={length}
+			/>
 		{/each}
 	</div>
 {/if}
@@ -58,31 +65,23 @@
 <style>
 	@keyframes sway {
 		0% {
-			transform: translateX(0);
+			transform: translateX(0) rotate(var(--rotation));
 		}
 		50% {
-			transform: translateX(calc(var(--windIntensity) * 0.4));
+			transform: translateX(calc(var(--windIntensity) * 0.4)) rotate(var(--rotation));
 		}
 		100% {
-			transform: translateX(0);
+			transform: translateX(0) rotate(var(--rotation));
 		}
-	}
-
-	.branch-container {
-		position: absolute;
-		bottom: 0;
-		transform-origin: bottom center;
 	}
 
 	.branch {
-		position: relative;
-		width: var(--branchWidth);
+		position: absolute;
 		height: 0;
-		background: var(--color);
 		transition: height 0.04s ease-out;
-		animation-delay: var(--randomDelay);
-		animation: sway 10s infinite ease-in-out;
+		transform-origin: bottom center;
 		will-change: transform, height;
+		animation: sway 5s ease-in-out infinite;
 	}
 
 	.branch.growing {
