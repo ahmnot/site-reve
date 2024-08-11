@@ -45,6 +45,7 @@
 		width: 5px;
 		height: 60%;
 		margin-left: 7px;
+		left: var(--left);
 		background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1), var(--color));
 		animation: stem var(--duration) linear infinite;
 	}
@@ -57,18 +58,19 @@
 			opacity: 1;
 		}
 		75% {
-			opacity: 0;
+			opacity: 0.75;
 		}
 		100% {
-			opacity: 0;
+			opacity: 0.1;
 		}
 	}
 
 	.splat {
-		width: 20px;
-		height: 10px;
+		width: 5px;
+		height: 0.5px;
 		border-radius: 50%;
 		opacity: 1;
+		left: var(--left);
 		border-top: 10px dotted var(--color);
 		animation: splat var(--duration) linear infinite;
 		display: block;
@@ -81,14 +83,14 @@
 		}
 		80% {
 			opacity: 1;
-			transform: scale(0);
+			transform: scale(0.5);
 		}
 		90% {
 			opacity: 0.5;
 			transform: scale(1);
 		}
 		100% {
-			opacity: 0;
+			opacity: 0.1;
 			transform: scale(2);
 		}
 	}

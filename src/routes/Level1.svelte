@@ -236,7 +236,7 @@
 		widthDecrementFactor: 0.85,
 		leafProbability: 0.98,
 		spiralProbability: 0.05,
-		initialBranchOnBranchProbability: 0.02,
+		initialBranchOnBranchProbability: 0.1,
 		branchOnBranchProbabilityDecrementFactor: 0.5
 	}
 
