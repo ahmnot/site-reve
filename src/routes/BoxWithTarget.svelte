@@ -1,11 +1,11 @@
 <script>
 	import { onMount, createEventDispatcher } from 'svelte';
-    import { magicSeedPositionWritable } from '../lib/magicSeedPositionStore.js';
+	import { magicSeedPositionWritable } from '../lib/magicSeedPositionStore.js';
 
 	let oldMagicSeedPosition;
 
 	// Subscribe to the store to get the position
-	magicSeedPositionWritable.subscribe(value => {
+	magicSeedPositionWritable.subscribe((value) => {
 		oldMagicSeedPosition = value;
 	});
 
@@ -14,7 +14,7 @@
 	export let isRainTriggered;
 	export let expanded;
 	export let toggleExpanded;
-	
+
 	export let oldMagicSeedWasClicked;
 
 	let newMagicSeedElem;
@@ -27,6 +27,8 @@
 	let ground, leftWall, rightWall, ceiling;
 	let engine;
 
+	let magicSeedHasHitGround = false;
+
 	$: if (expanded && box && engine) {
 		Matter.Body.setStatic(box.body, false);
 		Matter.Body.setStatic(newMagicSeed.body, true);
@@ -38,11 +40,16 @@
 		engine.gravity.y = 0.001;
 
 		const boxBody = Matter.Bodies.rectangle(window.innerWidth / 2, window.innerHeight / 2, 50, 50);
-		const newMagicSeedBody = Matter.Bodies.rectangle(window.innerWidth / 4, window.innerHeight / 2, 50, 50);
+		const newMagicSeedBody = Matter.Bodies.rectangle(
+			window.innerWidth / 4,
+			window.innerHeight / 2,
+			50,
+			50
+		);
 
 		ground = Matter.Bodies.rectangle(
 			window.innerWidth / 2,
-			window.innerHeight - 10,
+			window.innerHeight - 40,
 			window.innerWidth,
 			20,
 			{ isStatic: true }
@@ -104,7 +111,9 @@
 				this.elem.style.left = `${x - 25}px`;
 				this.elem.style.transform = `rotate(${this.body.angle}rad)`;
 			}
-		}
+		};
+
+		newMagicSeed.body.frictionAir = 0.02;
 
 		const updateBoundaries = () => {
 			Matter.Body.setPosition(ground, { x: window.innerWidth / 2, y: window.innerHeight + 10 });
@@ -167,6 +176,12 @@
 				isRainTriggered = false;
 			}
 
+			// Increase the angular velocity over time
+			if (!magicSeedHasHitGround && newMagicSeed && !newMagicSeed.body.isStatic) {
+				const currentAngularVelocity = newMagicSeed.body.angularVelocity;
+				Matter.Body.setAngularVelocity(newMagicSeed.body, currentAngularVelocity + 0.005);
+			}
+
 			box.render();
 			newMagicSeed.render();
 			Matter.Engine.update(engine);
@@ -207,26 +222,42 @@
 			document.addEventListener('mousemove', handleMouseMove);
 			document.addEventListener('mouseup', handleMouseUp);
 		});
+
+		Matter.Events.on(engine, 'collisionStart', function (event) {
+			event.pairs.forEach((pair) => {
+				const { bodyA, bodyB } = pair;
+				if (
+					(bodyA === newMagicSeed.body && bodyB === ground) ||
+					(bodyB === newMagicSeed.body && bodyA === ground)
+				) {
+					magicSeedHasHitGround = true;
+				}
+			});
+		});
 	});
 
 	$: if (oldMagicSeedWasClicked) {
-		console.log("TYTY")	
-		
-		console.log(oldMagicSeedPosition)	
 		if (oldMagicSeedPosition && newMagicSeed) {
 			const newPosition = {
-				x: oldMagicSeedPosition.left + 25 + 10, // Adjusting for the center of the seed + 10 because of animation
-				y: oldMagicSeedPosition.top + 25 + 10  // Adjusting for the center of the seed
+				x: oldMagicSeedPosition.left + 25, // Adjusting for the center of the seed + 10 because of animation
+				y: oldMagicSeedPosition.top + 25 // Adjusting for the center of the seed
 			};
-			Matter.Body.setPosition(newMagicSeed.body, newPosition);	
+			Matter.Body.setPosition(newMagicSeed.body, newPosition);
 
-			// Convert degrees (+ 90 because of animation) to radians
-			const angleInRadians = ((oldMagicSeedPosition.angle + 90) * Math.PI) / 180; 
+			// Convert degrees (+ 90 because of hologram animation) to radians
+			const angleInRadians = ((oldMagicSeedPosition.angle + 90) * Math.PI) / 180;
 			Matter.Body.setAngle(newMagicSeed.body, angleInRadians);
 			Matter.Body.setStatic(newMagicSeed.body, false);
 
-			newMagicSeedElem.style.visibility = 'visible';
+			// Make the newMagicSeed lighter
+			Matter.Body.setDensity(newMagicSeed.body, 0.001);
 
+			Matter.Body.applyForce(newMagicSeed.body, newMagicSeed.body.position, {
+				x: 0.03, // Small force to the right
+				y: 0 // No vertical force
+			});
+
+			newMagicSeedElem.style.visibility = 'visible';
 		}
 	}
 </script>
