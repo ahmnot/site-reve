@@ -115,6 +115,9 @@
 
 		newMagicSeed.body.frictionAir = 0.02;
 
+		// Make the newMagicSeed lighter
+		Matter.Body.setDensity(newMagicSeed.body, 0.001);
+
 		const updateBoundaries = () => {
 			Matter.Body.setPosition(ground, { x: window.innerWidth / 2, y: window.innerHeight + 10 });
 			Matter.Body.setPosition(leftWall, { x: -10, y: window.innerHeight / 2 });
@@ -179,7 +182,13 @@
 			// Increase the angular velocity over time
 			if (!magicSeedHasHitGround && newMagicSeed && !newMagicSeed.body.isStatic) {
 				const currentAngularVelocity = newMagicSeed.body.angularVelocity;
-				Matter.Body.setAngularVelocity(newMagicSeed.body, currentAngularVelocity + 0.005);
+				Matter.Body.setAngularVelocity(newMagicSeed.body, currentAngularVelocity + 0.007);
+
+				Matter.Body.applyForce(newMagicSeed.body, newMagicSeed.body.position, {
+					x: 0.0006, 
+					y: -0.001
+				});
+
 			}
 
 			box.render();
@@ -248,14 +257,6 @@
 			const angleInRadians = ((oldMagicSeedPosition.angle + 90) * Math.PI) / 180;
 			Matter.Body.setAngle(newMagicSeed.body, angleInRadians);
 			Matter.Body.setStatic(newMagicSeed.body, false);
-
-			// Make the newMagicSeed lighter
-			Matter.Body.setDensity(newMagicSeed.body, 0.001);
-
-			Matter.Body.applyForce(newMagicSeed.body, newMagicSeed.body.position, {
-				x: 0.03, // Small force to the right
-				y: 0 // No vertical force
-			});
 
 			newMagicSeedElem.style.visibility = 'visible';
 		}
