@@ -8,7 +8,7 @@
 
 	let expanded = true;
 	let isFirstClick = true;
-	let isFirstBranchGrowing = true;
+	let isFirstBranchGrowing = false;
 	let oldMagicSeedWasClicked = false;
 
 	function toggleExpanded() {
@@ -286,7 +286,7 @@
 				rainColor="rgba(176, 224, 230, 0.2)"
 			/>
 			<Tree slot="treeSlot" leftPosition="50%" treeGround="80vh" {isFirstBranchGrowing} {allTheBranches} on:branchMagicSeedWasClicked={handleMagicSeedClick} />
-			<MagicSeed slot="magicSeedSlot" growing=true rotation=0 parentLength=0 id="newMagicSeed" />
+			<MagicSeed slot="magicSeedSlot" growing=true rotation=0 parentLength=0 />
 		</BoxWithTarget>
 	</div>
 </div>

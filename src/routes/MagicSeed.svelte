@@ -1,14 +1,10 @@
 <script>
-
 	export let growing = false;
 	export let rotation;
 	export let parentLength;
-	export let id;
-
 </script>
 
 <div
-	{id}
 	class="magic-seed holographic"
 	class:growing
 	style="
@@ -25,10 +21,6 @@
 		transition:
 			height 0.05s ease-out,
 			transform 1s ease-out;
-	}
-
-	.magic-seed:hover {
-		cursor: pointer;
 	}
 
 	.magic-seed.growing {

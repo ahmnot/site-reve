@@ -45,8 +45,8 @@
 </script>
 
 {#if magicseed}
-	<div on:click={handleBranchMagicSeedClick}>
-		<MagicSeed {parentLength} {rotation} {growing} id="branchMagicSeed" />
+	<div id="branchMagicSeed" on:click={handleBranchMagicSeedClick}>
+		<MagicSeed {parentLength} {rotation} {growing}  />
 	</div>
 {:else}
 	<div
@@ -111,5 +111,9 @@
 
 	.branch.growing {
 		height: var(--branchLength);
+	}
+
+	#branchMagicSeed:hover {
+		cursor: pointer;
 	}
 </style>
