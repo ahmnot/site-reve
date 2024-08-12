@@ -8,7 +8,7 @@
 
 	let expanded = true;
 	let isFirstClick = true;
-	let isFirstBranchGrowing = true;
+	let isFirstBranchGrowing = false;
 	let oldMagicSeedWasClicked = false;
 
 	function toggleExpanded() {

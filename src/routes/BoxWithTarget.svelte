@@ -35,6 +35,8 @@
 		engine.gravity.y = 1;
 	}
 
+	let timeSinceNewMagicSeedVisible = 0;
+
 	onMount(() => {
 		engine = Matter.Engine.create();
 		engine.gravity.y = 0.001;
@@ -158,6 +160,9 @@
 		const targetElem = document.querySelector('#target');
 
 		const render = () => {
+			if (newMagicSeedElem.style.visibility === 'visible') {
+				timeSinceNewMagicSeedVisible++;
+			}
 			const boxPos = box.body.position;
 			const targetPos = targetElem.getBoundingClientRect();
 			const targetCenter = {
@@ -182,7 +187,12 @@
 			// Increase the angular velocity over time
 			if (!magicSeedHasHitGround && newMagicSeed && !newMagicSeed.body.isStatic) {
 				const currentAngularVelocity = newMagicSeed.body.angularVelocity;
-				Matter.Body.setAngularVelocity(newMagicSeed.body, currentAngularVelocity + 0.007);
+				if (timeSinceNewMagicSeedVisible<=50) {
+					Matter.Body.setAngularVelocity(newMagicSeed.body, currentAngularVelocity + 0.0005);
+				}
+				if (timeSinceNewMagicSeedVisible>40) {
+					Matter.Body.setAngularVelocity(newMagicSeed.body, currentAngularVelocity + 0.01);
+				}
 
 				Matter.Body.applyForce(newMagicSeed.body, newMagicSeed.body.position, {
 					x: 0.0006, 
@@ -195,6 +205,10 @@
 			newMagicSeed.render();
 			Matter.Engine.update(engine);
 			requestAnimationFrame(render);
+
+			if (timeSinceNewMagicSeedVisible>1000) {
+				timeSinceNewMagicSeedVisible=0;
+			}
 		};
 
 		render();
