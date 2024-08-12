@@ -8,7 +8,7 @@
 
 	let expanded = true;
 	let isFirstClick = true;
-	let isFirstBranchGrowing = false;
+	let isFirstBranchGrowing = true;
 	let oldMagicSeedWasClicked = false;
 
 	function toggleExpanded() {
@@ -121,7 +121,7 @@
 				rotationToAdd = 0;
 			}
 
-			if (!inSpiralMode && Math.random() < spiralProbability) {
+			if (!inSpiralMode && Math.random() < spiralProbability && i < numberOfBranches-4) {
 				inSpiralMode = true;
 				spirallingCount = 0;
 			}
