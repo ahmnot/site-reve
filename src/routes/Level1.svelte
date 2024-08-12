@@ -4,11 +4,12 @@
 	import BoxWithTarget from './BoxWithTarget.svelte';
 	import Rain from './Rain.svelte';
 	import Nuage from './Nuage.svelte';
+	import MagicSeed from './MagicSeed.svelte';
 
-	let isRaining = false;
 	let expanded = true;
 	let isFirstClick = true;
 	let isFirstBranchGrowing = true;
+	let oldMagicSeedWasClicked = false;
 
 	function toggleExpanded() {
 		if (isFirstClick) {
@@ -17,7 +18,7 @@
 		}
 	}
 
-	function handleStartBranchGrowing() {
+	function handleRainTriggering() {
 		setTimeout(() => {
 			isFirstBranchGrowing = true;
 		}, 5000);
@@ -49,6 +50,8 @@
 	let trunkBranchPosition = 0;
 
 	let newSetOfBranchesAngle;
+
+	let magicSeedAngle;
 
 	// Function to generate a tree with alternating degree angles
 	function generateBranches(config) {
@@ -142,8 +145,8 @@
 				length: `${currentLength}px`,
 				rotation: `${rotationToAdd}deg`,
 				color: 'tan',
-				windIntensity: `5px`,
-				windy: i % 7 == 0,
+				windIntensity: `3px`,
+				windy: i % 3 == 0,
 				childBranches: []
 			};
 
@@ -155,10 +158,10 @@
 					width: '50px',
 					length: '50px',
 					rotation: absoluteAngle,
-					magicseed: true,
-					windIntensity: `2px`
+					magicseed: true
 				});
 				magicSeedGenerated = true;
+				magicSeedAngle = absoluteAngle;
 			}
 
 			// Leaves generated on magic branchThe i < 7 is here to prevent leaves overlapping the magic seed
@@ -171,7 +174,6 @@
 					rotation: `${Math.random() < 0.5 ? 90 : -90}deg`,
 					color: 'forestgreen',
 					windIntensity: `${1 / (widthDecrementFactor * 0.95)}px`,
-					windy: i % 5 == 0,
 					childBranches: []
 				});
 			}
@@ -260,15 +262,19 @@
 		branchOnBranchProbabilityDecrementFactor: 1.6,
 		subBranchesFixedParameters
 	});
+
+	function handleMagicSeedClick() {
+		oldMagicSeedWasClicked = true;
+	}
 </script>
 
 <div class="outer-container">
 	<div class="central" class:expanded>
 		<BoxWithTarget
-			{isRaining}
 			{expanded}
 			{toggleExpanded}
-			on:triggerEvent={handleStartBranchGrowing}
+			on:triggerRain={handleRainTriggering}
+			{oldMagicSeedWasClicked}
 		>
 			<Nuage slot="boxTarget" />
 			<Rain
@@ -279,7 +285,8 @@
 				rainGround="75vh"
 				rainColor="rgba(176, 224, 230, 0.2)"
 			/>
-			<Tree leftPosition="50%" treeGround="80vh" {isFirstBranchGrowing} {allTheBranches} />
+			<Tree slot="treeSlot" leftPosition="50%" treeGround="80vh" {isFirstBranchGrowing} {allTheBranches} on:branchMagicSeedWasClicked={handleMagicSeedClick} />
+			<MagicSeed slot="magicSeedSlot" growing=true rotation=0 parentLength=0 id="newMagicSeed" />
 		</BoxWithTarget>
 	</div>
 </div>

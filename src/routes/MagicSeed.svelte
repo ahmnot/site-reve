@@ -1,25 +1,21 @@
 <script>
+
 	export let growing = false;
 	export let rotation;
 	export let parentLength;
-	let fallen = false;
+	export let id;
 
-	function handleClick() {
-		fallen = true;
-		console.log('handle seed falling');
-	}
 </script>
 
 <div
-	id="magicSeed"
+	{id}
 	class="magic-seed holographic"
 	class:growing
-	class:fallen
-	on:click={handleClick}
 	style="
 		bottom: {parentLength};
+		transform: rotate({rotation});
 	"
-></div>
+/>
 
 <style>
 	.magic-seed {
@@ -29,6 +25,10 @@
 		transition:
 			height 0.05s ease-out,
 			transform 1s ease-out;
+	}
+
+	.magic-seed:hover {
+		cursor: pointer;
 	}
 
 	.magic-seed.growing {

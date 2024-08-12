@@ -1,20 +1,35 @@
 <script>
 	import { onMount, createEventDispatcher } from 'svelte';
+    import { magicSeedPositionWritable } from '../lib/magicSeedPositionStore.js';
+
+	let oldMagicSeedPosition;
+
+	// Subscribe to the store to get the position
+	magicSeedPositionWritable.subscribe(value => {
+		oldMagicSeedPosition = value;
+	});
+
 	import Matter from 'matter-js';
 
-	export let isEventTriggered;
+	export let isRainTriggered;
 	export let expanded;
 	export let toggleExpanded;
+	
+	export let oldMagicSeedWasClicked;
+
+	let newMagicSeedElem;
 
 	const dispatch = createEventDispatcher();
 
 	let box;
+	let newMagicSeed;
 	let isGrabbing = false;
 	let ground, leftWall, rightWall, ceiling;
 	let engine;
 
 	$: if (expanded && box && engine) {
 		Matter.Body.setStatic(box.body, false);
+		Matter.Body.setStatic(newMagicSeed.body, true);
 		engine.gravity.y = 1;
 	}
 
@@ -23,6 +38,7 @@
 		engine.gravity.y = 0.001;
 
 		const boxBody = Matter.Bodies.rectangle(window.innerWidth / 2, window.innerHeight / 2, 50, 50);
+		const newMagicSeedBody = Matter.Bodies.rectangle(window.innerWidth / 4, window.innerHeight / 2, 50, 50);
 
 		ground = Matter.Bodies.rectangle(
 			window.innerWidth / 2,
@@ -56,6 +72,7 @@
 
 		Matter.Composite.add(engine.world, [
 			boxBody,
+			newMagicSeedBody,
 			ground,
 			leftWall,
 			rightWall,
@@ -75,6 +92,19 @@
 				this.elem.style.transform = `rotate(${this.body.angle}rad)`;
 			}
 		};
+
+		newMagicSeedElem = document.querySelector('#newMagicSeed');
+
+		newMagicSeed = {
+			body: newMagicSeedBody,
+			elem: newMagicSeedElem,
+			render() {
+				const { x, y } = this.body.position;
+				this.elem.style.top = `${y - 25}px`;
+				this.elem.style.left = `${x - 25}px`;
+				this.elem.style.transform = `rotate(${this.body.angle}rad)`;
+			}
+		}
 
 		const updateBoundaries = () => {
 			Matter.Body.setPosition(ground, { x: window.innerWidth / 2, y: window.innerHeight + 10 });
@@ -131,13 +161,14 @@
 				Matter.Body.setPosition(box.body, targetCenter);
 				Matter.Body.setVelocity(box.body, { x: 0, y: 0 });
 				Matter.Body.setAngularVelocity(box.body, 0);
-				isEventTriggered = true;
-				dispatch('triggerEvent');
+				isRainTriggered = true;
+				dispatch('triggerRain');
 			} else {
-				isEventTriggered = false;
+				isRainTriggered = false;
 			}
 
 			box.render();
+			newMagicSeed.render();
 			Matter.Engine.update(engine);
 			requestAnimationFrame(render);
 		};
@@ -147,6 +178,7 @@
 		const handleMouseUp = () => {
 			isGrabbing = false;
 			boxElem.style.cursor = 'grab';
+			newMagicSeedElem.style.cursor = 'grab';
 			document.body.style.cursor = 'default';
 			document.removeEventListener('mousemove', handleMouseMove);
 			document.removeEventListener('mouseup', handleMouseUp);
@@ -155,6 +187,7 @@
 		const handleMouseMove = () => {
 			if (isGrabbing) {
 				boxElem.style.cursor = 'grabbing';
+				newMagicSeedElem.style.cursor = 'grabbing';
 				document.body.style.cursor = 'grabbing';
 			}
 		};
@@ -166,19 +199,50 @@
 			document.addEventListener('mousemove', handleMouseMove);
 			document.addEventListener('mouseup', handleMouseUp);
 		});
+
+		newMagicSeedElem.addEventListener('mousedown', () => {
+			isGrabbing = true;
+			newMagicSeedElem.style.cursor = 'grabbing';
+			document.body.style.cursor = 'grabbing';
+			document.addEventListener('mousemove', handleMouseMove);
+			document.addEventListener('mouseup', handleMouseUp);
+		});
 	});
+
+	$: if (oldMagicSeedWasClicked) {
+		console.log("TYTY")	
+		
+		console.log(oldMagicSeedPosition)	
+		if (oldMagicSeedPosition && newMagicSeed) {
+			const newPosition = {
+				x: oldMagicSeedPosition.left + 25 + 10, // Adjusting for the center of the seed + 10 because of animation
+				y: oldMagicSeedPosition.top + 25 + 10  // Adjusting for the center of the seed
+			};
+			Matter.Body.setPosition(newMagicSeed.body, newPosition);	
+
+			// Convert degrees (+ 90 because of animation) to radians
+			const angleInRadians = ((oldMagicSeedPosition.angle + 90) * Math.PI) / 180; 
+			Matter.Body.setAngle(newMagicSeed.body, angleInRadians);
+			Matter.Body.setStatic(newMagicSeed.body, false);
+
+			newMagicSeedElem.style.visibility = 'visible';
+
+		}
+	}
 </script>
 
 <div id="target" class:hidden={!expanded}>
 	<slot name="boxTarget"></slot>
-	{#if isEventTriggered}
+	{#if isRainTriggered}
 		<slot name="appearsWhenBoxInBoxTarget"></slot>
 	{/if}
 	<!-- slot for the tree -->
-	<slot></slot>
+	<slot name="treeSlot"></slot>
 </div>
 
 <button id="box" on:click={toggleExpanded}>{expanded ? 'pluie' : 'rêve'}</button>
+
+<button id="newMagicSeed"><slot name="magicSeedSlot"></slot></button>
 
 <style>
 	:root {
@@ -213,5 +277,19 @@
 		font-size: 0.8em;
 		border: none;
 		background: none;
+	}
+
+	#newMagicSeed {
+		position: absolute;
+		height: 50px;
+		width: 50px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		user-select: none;
+		overflow: hidden;
+		cursor: pointer;
+		border: none;
+		visibility: hidden;
 	}
 </style>

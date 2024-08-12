@@ -1,6 +1,8 @@
 <script>
 	import { onDestroy } from 'svelte';
 	import MagicSeed from './MagicSeed.svelte';
+	import { createEventDispatcher } from 'svelte';
+    import { magicSeedPositionWritable } from '../lib/magicSeedPositionStore.js';
 
 	export let zIndex;
 	export let width;
@@ -16,6 +18,8 @@
 
 	let branchDoneGrowing = false;
 
+	const dispatch = createEventDispatcher();
+
 	$: if (growing) {
 		const timer = setTimeout(() => {
 			branchDoneGrowing = true;
@@ -24,10 +28,26 @@
 		onDestroy(() => clearTimeout(timer));
 	}
 
+	function handleBranchMagicSeedClick() {
+
+		const branchMagicSeedElement = document.querySelector('#branchMagicSeed');
+
+		const rect = branchMagicSeedElement.getBoundingClientRect();
+
+		// Update the store with the position
+		magicSeedPositionWritable.set({ top: rect.top, left: rect.left, angle: rotation });
+
+		dispatch('branchMagicSeedWasClicked');
+
+		branchMagicSeedElement.remove();
+	}
+
 </script>
 
 {#if magicseed}
-	<MagicSeed {parentLength} {rotation} {growing} />
+	<div on:click={handleBranchMagicSeedClick}>
+		<MagicSeed {parentLength} {rotation} {growing} id="branchMagicSeed" />
+	</div>
 {:else}
 	<div
 		class="branch"
@@ -58,6 +78,7 @@
 				magicseed={branch.magicseed}
 				windy={branch.windy}
 				parentLength={length}
+				on:branchMagicSeedWasClicked
 			/>
 		{/each}
 	</div>
@@ -90,31 +111,5 @@
 
 	.branch.growing {
 		height: var(--branchLength);
-	}
-
-	.branch.magicseed {
-		background-image: linear-gradient(
-			135deg,
-			hsl(2, 100%, 73%),
-			hsl(53, 100%, 69%),
-			hsl(93, 100%, 69%),
-			hsl(176, 100%, 76%),
-			hsl(228, 100%, 74%),
-			hsl(283, 100%, 73%)
-		);
-		background-size: 400% 400%;
-		animation: holographic 5s ease-in-out infinite;
-	}
-
-	@keyframes holographic {
-		0% {
-			background-position: 0% 50%;
-		}
-		50% {
-			background-position: 100% 50%;
-		}
-		100% {
-			background-position: 0% 50%;
-		}
 	}
 </style>
