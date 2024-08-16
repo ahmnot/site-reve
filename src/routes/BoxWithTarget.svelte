@@ -1,6 +1,7 @@
 <script>
-	import { onMount, createEventDispatcher } from 'svelte';
+	import { onMount } from 'svelte';
 	import { magicSeedPositionWritable } from '../lib/magicSeedPositionStore.js';
+	import { isRainTriggered } from '../lib/rainStore.js';
 
 	let oldMagicSeedPosition;
 
@@ -11,7 +12,6 @@
 
 	import Matter from 'matter-js';
 
-	export let isRainTriggered;
 	export let expanded;
 	export let toggleExpanded;
 
@@ -19,15 +19,13 @@
 
 	let newMagicSeedElem;
 
-	const dispatch = createEventDispatcher();
-
 	let box;
 	let newMagicSeed;
 	let isGrabbing = false;
 	let ground, leftWall, rightWall, ceiling;
 	let engine;
 
-	let magicSeedHasHitGround = false;
+	let magicSeedHasHitGroundOrGrabbed = false;
 
 	$: if (expanded && box && engine) {
 		Matter.Body.setStatic(box.body, false);
@@ -51,22 +49,30 @@
 
 		ground = Matter.Bodies.rectangle(
 			window.innerWidth / 2,
-			window.innerHeight - 40,
+			window.innerHeight + 250,
 			window.innerWidth,
-			20,
+			500,
 			{ isStatic: true }
 		);
-		leftWall = Matter.Bodies.rectangle(-10, window.innerHeight / 2, 20, window.innerHeight, {
-			isStatic: true
-		});
+		leftWall = Matter.Bodies.rectangle(
+			-250, 
+			window.innerHeight / 2, 
+			500, 
+			window.innerHeight, 
+			{isStatic: true}
+		);
 		rightWall = Matter.Bodies.rectangle(
-			window.innerWidth + 10,
+			window.innerWidth + 250,
 			window.innerHeight / 2,
-			20,
+			500,
 			window.innerHeight,
 			{ isStatic: true }
 		);
-		ceiling = Matter.Bodies.rectangle(window.innerWidth / 2, -10, window.innerWidth, 20, {
+		ceiling = Matter.Bodies.rectangle(
+			window.innerWidth / 2, 
+			-250, 
+			window.innerWidth, 
+			500, {
 			isStatic: true
 		});
 
@@ -178,14 +184,13 @@
 				Matter.Body.setPosition(box.body, targetCenter);
 				Matter.Body.setVelocity(box.body, { x: 0, y: 0 });
 				Matter.Body.setAngularVelocity(box.body, 0);
-				isRainTriggered = true;
-				dispatch('triggerRain');
+				isRainTriggered.set(true);
 			} else {
-				isRainTriggered = false;
+				isRainTriggered.set(false);
 			}
 
 			// Increase the angular velocity over time
-			if (!magicSeedHasHitGround && newMagicSeed && !newMagicSeed.body.isStatic) {
+			if (!magicSeedHasHitGroundOrGrabbed && newMagicSeed && !newMagicSeed.body.isStatic) {
 				const currentAngularVelocity = newMagicSeed.body.angularVelocity;
 				if (timeSinceNewMagicSeedVisible<=50) {
 					Matter.Body.setAngularVelocity(newMagicSeed.body, currentAngularVelocity + 0.0005);
@@ -240,6 +245,7 @@
 
 		newMagicSeedElem.addEventListener('mousedown', () => {
 			isGrabbing = true;
+			magicSeedHasHitGroundOrGrabbed = true;
 			newMagicSeedElem.style.cursor = 'grabbing';
 			document.body.style.cursor = 'grabbing';
 			document.addEventListener('mousemove', handleMouseMove);
@@ -253,7 +259,7 @@
 					(bodyA === newMagicSeed.body && bodyB === ground) ||
 					(bodyB === newMagicSeed.body && bodyA === ground)
 				) {
-					magicSeedHasHitGround = true;
+					magicSeedHasHitGroundOrGrabbed = true;
 				}
 			});
 		});
@@ -279,7 +285,7 @@
 
 <div id="target" class:hidden={!expanded}>
 	<slot name="boxTarget"></slot>
-	{#if isRainTriggered}
+	{#if $isRainTriggered}
 		<slot name="appearsWhenBoxInBoxTarget"></slot>
 	{/if}
 	<!-- slot for the tree -->

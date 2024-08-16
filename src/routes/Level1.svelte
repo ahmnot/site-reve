@@ -5,23 +5,55 @@
 	import Rain from './Rain.svelte';
 	import Nuage from './Nuage.svelte';
 	import MagicSeed from './MagicSeed.svelte';
+	import { isRainTriggered } from '../lib/rainStore.js';
 
 	let expanded = true;
 	let isFirstClick = true;
-	let isFirstBranchGrowing = false;
 	let oldMagicSeedWasClicked = false;
+
+	// GROWTH TRIGGERING LOGIC
+	let isFirstBranchGrowing = true;
+	let rainCounter = 0;
+	let rainInterval;
+	let rainTriggeringStartTimestamp = null;
+
+	isRainTriggered.subscribe((value) => {
+		if (value) {
+			// If this is the first time value becomes true, set the timestamp
+			if (rainTriggeringStartTimestamp === null) {
+				rainTriggeringStartTimestamp = Date.now();
+			}
+
+			// Start the interval if rain is triggered
+			if (!rainInterval) {
+				rainInterval = setInterval(() => {
+					const elapsedTime = Date.now() - rainTriggeringStartTimestamp;
+					if (elapsedTime >= 2000) {
+						// Only increment the counter after a little while have passed (2 seconds)
+						rainCounter++;
+						if (rainCounter >= 35) {
+							isFirstBranchGrowing = true;
+							clearInterval(rainInterval); // Stop the interval when the branch starts growing
+							rainInterval = null; // Clear the interval reference
+						}
+					}
+				}, 100); // Increment every 100ms
+			}
+		} else {
+			// Reset the timestamp and stop the interval when rain is not triggered
+			rainTriggeringStartTimestamp = null;
+			if (rainInterval) {
+				clearInterval(rainInterval);
+				rainInterval = null;
+			}
+		}
+	});
 
 	function toggleExpanded() {
 		if (isFirstClick) {
 			expanded = true;
 			isFirstClick = false;
 		}
-	}
-
-	function handleRainTriggering() {
-		setTimeout(() => {
-			isFirstBranchGrowing = true;
-		}, 5000);
 	}
 
 	// Unique ID generator using a counter
@@ -52,6 +84,7 @@
 	let newSetOfBranchesAngle;
 
 	let magicSeedAngle;
+
 
 	// Function to generate a tree with alternating degree angles
 	function generateBranches(config) {
@@ -85,7 +118,7 @@
 		let magicSeedCondition =
 			depth == initialDepth - 1 &&
 			!magicSeedGenerated &&
-			trunkBranchPosition > Math.floor((2 * trunkNumberOfBranches) / 3) - 2;
+			trunkBranchPosition > magicSeedBranchPosition;
 
 		let parentBranch = {
 			id: generateUniqueId(baseId),
@@ -111,17 +144,17 @@
 			currentLength *= lengthDecrementFactor;
 			currentBranchOnBranchProbability *= branchOnBranchProbabilityDecrementFactor;
 
-			rotationToAdd = getRandomValueWithSign(
-				[2.8125, 5.625, 11.25
+			rotationToAdd = getRandomValueWithSign([
+				2.8125, 5.625, 11.25
 				//, 22.5, 45, 90
-				]);
+			]);
 
 			// Control the general direction of the branch
 			if (Math.abs(absoluteAngle + rotationToAdd) > branchAngleLimitation) {
 				rotationToAdd = 0;
 			}
 
-			if (!inSpiralMode && Math.random() < spiralProbability && i < numberOfBranches-4) {
+			if (!inSpiralMode && Math.random() < spiralProbability && i < numberOfBranches - 4) {
 				inSpiralMode = true;
 				spirallingCount = 0;
 			}
@@ -229,7 +262,18 @@
 		return finalBranches;
 	}
 
-	const trunkNumberOfBranches = 25;
+	$: innerHeight = 0;
+
+	$: trunkNumberOfBranches = Math.floor(innerHeight / 45);
+	$: initialBranchWidth = Math.floor(innerHeight / 33);
+	$: initialBranchLength = initialBranchWidth;
+	$: magicSeedBranchPosition = Math.floor((2 * trunkNumberOfBranches) / 3) - 2;
+
+	// Reset magicSeedGenerated when window is resized
+	$: if (innerHeight) {
+		magicSeedGenerated = false;
+	}
+
 	const initialDepth = 2;
 
 	const subBranchesFixedParameters = {
@@ -243,16 +287,16 @@
 		spiralProbability: 0.05,
 		initialBranchOnBranchProbability: 0.1,
 		branchOnBranchProbabilityDecrementFactor: 0.5
-	}
+	};
 
-	let allTheBranches = generateBranches({
+	$: allTheBranches = generateBranches({
 		numberOfBranches: trunkNumberOfBranches,
 		depth: initialDepth,
 		baseId: '',
 		branchAngleLimitation: 10,
 		initialBranchAngle: 0,
-		initialBranchWidth: 40,
-		initialBranchLength: 40,
+		initialBranchWidth: initialBranchWidth,
+		initialBranchLength: initialBranchLength,
 		angleDecrementFactor: 0.75,
 		widthDecrementFactor: 0.9,
 		lengthDecrementFactor: 0.97,
@@ -268,14 +312,11 @@
 	}
 </script>
 
+<svelte:window bind:innerHeight />
+
 <div class="outer-container">
 	<div class="central" class:expanded>
-		<BoxWithTarget
-			{expanded}
-			{toggleExpanded}
-			on:triggerRain={handleRainTriggering}
-			{oldMagicSeedWasClicked}
-		>
+		<BoxWithTarget {expanded} {toggleExpanded} {oldMagicSeedWasClicked}>
 			<Nuage slot="boxTarget" />
 			<Rain
 				slot="appearsWhenBoxInBoxTarget"
@@ -285,11 +326,19 @@
 				rainGround="75vh"
 				rainColor="rgba(176, 224, 230, 0.2)"
 			/>
-			<Tree slot="treeSlot" leftPosition="50%" treeGround="80vh" {isFirstBranchGrowing} {allTheBranches} on:branchMagicSeedWasClicked={handleMagicSeedClick} />
-			<MagicSeed slot="magicSeedSlot" growing=true rotation=0 parentLength=0 />
+			<Tree
+				slot="treeSlot"
+				leftPosition="50%"
+				treeGround="80vh"
+				{isFirstBranchGrowing}
+				{allTheBranches}
+				on:branchMagicSeedWasClicked={handleMagicSeedClick}
+			/>
+			<MagicSeed slot="magicSeedSlot" growing="true" rotation="0" parentLength="0" />
 		</BoxWithTarget>
 	</div>
 </div>
+
 
 <style>
 	:root {
