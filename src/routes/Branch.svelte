@@ -15,6 +15,9 @@
 	export let magicseed = false;
 	export let parentLength = 0;
 	export let windy = true;
+    export let swayOnHover = false; // New prop
+
+	let swaying = false;
 
 	let branchDoneGrowing = false;
 
@@ -42,6 +45,19 @@
 		branchMagicSeedElement.remove();
 	}
 
+
+	function startSway() {
+		if (swayOnHover) {
+			console.log("TOTO")
+			swaying = true;
+		}
+	}
+
+	function stopSway() {
+		setTimeout(() => {
+			swaying = false;
+		}, 500);
+	}
 </script>
 
 {#if magicseed}
@@ -54,6 +70,7 @@
 		class:growing
 		class:windy
 		class:magicseed
+		class:swaying
 		style="
 		width: {width};  
 		background: {color}; 
@@ -64,6 +81,8 @@
 		--branchLength: {length};
 		--rotation: {rotation};
 		"
+		on:mouseenter={startSway}
+		on:mouseleave={stopSway}
 	>
 		{#each childBranches as branch (branch.id)}
 			<svelte:self
@@ -79,6 +98,7 @@
 				windy={branch.windy}
 				parentLength={length}
 				on:branchMagicSeedWasClicked
+                swayOnHover={branch.swayOnHover}
 			/>
 		{/each}
 	</div>
@@ -94,6 +114,18 @@
 		}
 		100% {
 			transform: translateX(0) rotate(var(--rotation));
+		}
+	}
+
+	@keyframes sway-quick {
+		0% {
+			transform: rotate(var(--rotation));
+		}
+		50% {
+			transform: rotate(calc(var(--rotation) + 0.75deg)); /* Subtle adjustment */
+		}
+		100% {
+			transform: rotate(var(--rotation));
 		}
 	}
 
@@ -115,5 +147,9 @@
 
 	#branchMagicSeed:hover {
 		cursor: pointer;
+	}
+
+	.branch.swaying {
+		animation: sway-quick 0.5s ease-in-out normal !important;
 	}
 </style>

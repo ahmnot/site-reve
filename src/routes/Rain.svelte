@@ -42,19 +42,25 @@
 
 			backDrops = [...backDrops, backDrop];
 
-			increment += randoFiver / 4;
+			increment += randoFiver / 2;
 			direction *= -1;
 		} else {
 			clearInterval(dropInterval);
 		}
 	};
 
+	const maxDrops = 20; // Set a limit for the maximum number of drops
+
 	const startRain = () => {
 		const intervalFunc = () => {
-			addDrop();
-			currentInterval = Math.max(minInterval, currentInterval * 0.75);
-			clearInterval(dropInterval);
-			dropInterval = setInterval(intervalFunc, currentInterval);
+			if (drops.length < maxDrops) {
+				addDrop();
+				currentInterval = Math.max(minInterval, currentInterval * 0.75);
+				clearInterval(dropInterval);
+				dropInterval = setInterval(intervalFunc, currentInterval);
+			} else {
+				clearInterval(dropInterval); // Stop the loop when maxDrops is reached
+			}
 		};
 		dropInterval = setInterval(intervalFunc, currentInterval);
 	};

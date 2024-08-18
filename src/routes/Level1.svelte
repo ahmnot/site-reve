@@ -128,6 +128,7 @@
 			rotation: magicSeedCondition ? '90deg' : `${rotationToAdd}deg`,
 			color: 'tan',
 			windIntensity: `0px`,
+			swayOnHover:true,
 			childBranches: []
 		};
 
@@ -310,6 +311,8 @@
 	function handleMagicSeedClick() {
 		oldMagicSeedWasClicked = true;
 	}
+
+	$: treeGroundPosition = innerHeight *0.8;
 </script>
 
 <svelte:window bind:innerHeight />
@@ -323,13 +326,13 @@
 				top="40%"
 				width="80%"
 				left="3%"
-				rainGround="75vh"
+				rainGround="{treeGroundPosition}px"
 				rainColor="rgba(176, 224, 230, 0.2)"
 			/>
 			<Tree
 				slot="treeSlot"
 				leftPosition="50%"
-				treeGround="80vh"
+				treeGround="{treeGroundPosition}px"
 				{isFirstBranchGrowing}
 				{allTheBranches}
 				on:branchMagicSeedWasClicked={handleMagicSeedClick}

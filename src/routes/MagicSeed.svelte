@@ -16,15 +16,17 @@
 <style>
 	.magic-seed {
 		position: absolute;
-		width: 50px;
+		width: 0;
 		height: 0;
 		transition:
-			height 0.05s ease-out,
+			height 1s ease-in,
+			width 1s ease-in,
 			transform 1s ease-out;
 	}
 
 	.magic-seed.growing {
 		height: 50px;
+		width: 50px;
 	}
 
 	.magic-seed.holographic {
