@@ -4,6 +4,7 @@
 	import { isRainTriggered } from '../lib/rainStore.js';
 
 	let oldMagicSeedPosition;
+	let isMobile;
 
 	// Subscribe to the store to get the position
 	magicSeedPositionWritable.subscribe((value) => {
@@ -36,6 +37,8 @@
 	let timeSinceNewMagicSeedVisible = 0;
 
 	onMount(() => {
+		isMobile = /iPhone|iPad|iPod|Android/i.test(window.navigator.userAgent);
+
 		engine = Matter.Engine.create();
 		engine.gravity.y = 0.001;
 
@@ -191,12 +194,13 @@
 
 			// Increase the angular velocity over time
 			if (!magicSeedHasHitGroundOrGrabbed && newMagicSeed && !newMagicSeed.body.isStatic) {
-				const currentAngularVelocity = newMagicSeed.body.angularVelocity;
-				if (timeSinceNewMagicSeedVisible<=50) {
-					Matter.Body.setAngularVelocity(newMagicSeed.body, currentAngularVelocity + 0.0005);
-				}
-				if (timeSinceNewMagicSeedVisible>40) {
-					Matter.Body.setAngularVelocity(newMagicSeed.body, currentAngularVelocity + 0.01);
+					const currentAngularVelocity = newMagicSeed.body.angularVelocity;
+					// This is for the "falling in the wind" animation
+					if (timeSinceNewMagicSeedVisible <= 50) {
+						Matter.Body.setAngularVelocity(newMagicSeed.body, currentAngularVelocity + 0.0005);
+					}
+					if (timeSinceNewMagicSeedVisible > 40) {
+						Matter.Body.setAngularVelocity(newMagicSeed.body, currentAngularVelocity + 0.01);
 				}
 
 				Matter.Body.applyForce(newMagicSeed.body, newMagicSeed.body.position, {

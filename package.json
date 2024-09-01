@@ -28,6 +28,7 @@
 	"dependencies": {
 		"matter-attractors": "^0.1.6",
 		"matter-js": "^0.20.0",
+		"site-reve": "file:",
 		"three": "^0.167.0"
 	}
 }

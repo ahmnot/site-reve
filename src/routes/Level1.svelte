@@ -12,7 +12,7 @@
 	let oldMagicSeedWasClicked = false;
 
 	// GROWTH TRIGGERING LOGIC
-	let isFirstBranchGrowing = true;
+	let isFirstBranchGrowing = false;
 	let rainCounter = 0;
 	let rainInterval;
 	let rainTriggeringStartTimestamp = null;

@@ -48,7 +48,6 @@
 
 	function startSway() {
 		if (swayOnHover) {
-			console.log("TOTO")
 			swaying = true;
 		}
 	}
@@ -61,7 +60,7 @@
 </script>
 
 {#if magicseed}
-	<div id="branchMagicSeed" on:click={handleBranchMagicSeedClick}>
+	<div id="branchMagicSeed" on:click={handleBranchMagicSeedClick} on:touchstart={handleBranchMagicSeedClick}>
 		<MagicSeed {parentLength} {rotation} {growing}  />
 	</div>
 {:else}
@@ -83,6 +82,7 @@
 		"
 		on:mouseenter={startSway}
 		on:mouseleave={stopSway}
+		on:touchstart={startSway} on:touchend={stopSway}
 	>
 		{#each childBranches as branch (branch.id)}
 			<svelte:self

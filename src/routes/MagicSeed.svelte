@@ -19,8 +19,8 @@
 		width: 0;
 		height: 0;
 		transition:
-			height 1s ease-in,
-			width 1s ease-in,
+			height 0.2s ease-out,
+			width 0.2s ease-out,
 			transform 1s ease-out;
 	}
 
