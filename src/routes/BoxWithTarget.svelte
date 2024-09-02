@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { magicSeedPositionWritable } from '../lib/magicSeedPositionStore.js';
 	import { isRainTriggered } from '../lib/rainStore.js';
+	import { isMagicSeedBloomTriggered, magicSeedBloomLeftOffset } from '../lib/magicSeedBloomStore.js';
 
 	let oldMagicSeedPosition;
 	let isMobile;
@@ -26,7 +27,7 @@
 	let ground, leftWall, rightWall, ceiling;
 	let engine;
 
-	let magicSeedHasHitGroundOrGrabbed = false;
+	let magicSeedHasHitGround = false;
 
 	$: if (expanded && box && engine) {
 		Matter.Body.setStatic(box.body, false);
@@ -35,6 +36,10 @@
 	}
 
 	let timeSinceNewMagicSeedVisible = 0;
+
+	let growthTimeout;
+
+	$: innerWidth = 0;
 
 	onMount(() => {
 		isMobile = /iPhone|iPad|iPod|Android/i.test(window.navigator.userAgent);
@@ -193,7 +198,7 @@
 			}
 
 			// Increase the angular velocity over time
-			if (!magicSeedHasHitGroundOrGrabbed && newMagicSeed && !newMagicSeed.body.isStatic) {
+			if (!magicSeedHasHitGround && newMagicSeed && !newMagicSeed.body.isStatic) {
 					const currentAngularVelocity = newMagicSeed.body.angularVelocity;
 					// This is for the "falling in the wind" animation
 					if (timeSinceNewMagicSeedVisible <= 50) {
@@ -209,6 +214,9 @@
 				});
 
 			}
+
+			// Update the X position of newMagicSeed
+			magicSeedPositionX = newMagicSeed.body.position.x;
 
 			box.render();
 			newMagicSeed.render();
@@ -247,15 +255,7 @@
 			document.addEventListener('mouseup', handleMouseUp);
 		});
 
-		newMagicSeedElem.addEventListener('mousedown', () => {
-			isGrabbing = true;
-			magicSeedHasHitGroundOrGrabbed = true;
-			newMagicSeedElem.style.cursor = 'grabbing';
-			document.body.style.cursor = 'grabbing';
-			document.addEventListener('mousemove', handleMouseMove);
-			document.addEventListener('mouseup', handleMouseUp);
-		});
-
+		// What happens when the magic seed hits the ground
 		Matter.Events.on(engine, 'collisionStart', function (event) {
 			event.pairs.forEach((pair) => {
 				const { bodyA, bodyB } = pair;
@@ -263,7 +263,33 @@
 					(bodyA === newMagicSeed.body && bodyB === ground) ||
 					(bodyB === newMagicSeed.body && bodyA === ground)
 				) {
-					magicSeedHasHitGroundOrGrabbed = true;
+					magicSeedHasHitGround = true;
+
+					// Annule tout délai de croissance précédent si la graine touche à nouveau le sol
+					if (growthTimeout) {
+						clearTimeout(growthTimeout);
+					}
+
+					// Définir un délai avant de commencer la croissance
+					growthTimeout = setTimeout(() => {
+
+						// Correct the angle before blooming
+						const currentAngle = newMagicSeed.body.angle;
+						if (currentAngle !== 0) {
+							// Adjust the angle to ensure the seed is upright
+							Matter.Body.setAngle(newMagicSeed.body, 0);
+							newMagicSeedElem.style.transform = `rotate(0rad)`;
+						}
+
+						// Correct the offset before blooming
+						magicSeedBloomLeftOffset.set(-(magicSeedPositionX - (25 + innerWidth/2)))
+
+						isMagicSeedBloomTriggered.set(true);
+
+						newMagicSeedElem.style.cursor = "default";
+						//Matter.Body.setStatic(newMagicSeed.body, true);
+					}, 1500); // Délai avant de commencer la croissance
+
 				}
 			});
 		});
@@ -285,20 +311,30 @@
 			newMagicSeedElem.style.visibility = 'visible';
 		}
 	}
+
+    let magicSeedPositionX = 0;
+
 </script>
 
+<svelte:window bind:innerWidth />
+
 <div id="target" class:hidden={!expanded}>
+	
 	<slot name="boxTarget"></slot>
 	{#if $isRainTriggered}
 		<slot name="appearsWhenBoxInBoxTarget"></slot>
 	{/if}
 	<!-- slot for the tree -->
 	<slot name="treeSlot"></slot>
-</div>
 
+</div>
 <button id="box" on:click={toggleExpanded}>{expanded ? 'pluie' : 'rêve'}</button>
 
-<button id="newMagicSeed"><slot name="magicSeedSlot"></slot></button>
+<div id="newMagicSeed" >
+	<slot name="magicSeedSlot" >
+		<p>TOTO</p></slot>
+</div>
+
 
 <style>
 	:root {
@@ -343,9 +379,10 @@
 		align-items: center;
 		justify-content: center;
 		user-select: none;
-		overflow: hidden;
+		overflow: visible;
 		cursor: pointer;
 		border: none;
 		visibility: hidden;
+		background-color: transparent;
 	}
 </style>

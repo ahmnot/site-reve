@@ -6,16 +6,28 @@
 	import Nuage from './Nuage.svelte';
 	import MagicSeed from './MagicSeed.svelte';
 	import { isRainTriggered } from '../lib/rainStore.js';
+	import { isMagicSeedBloomTriggered, magicSeedBloomLeftOffset } from '../lib/magicSeedBloomStore.js';
 
 	let expanded = true;
 	let isFirstClick = true;
 	let oldMagicSeedWasClicked = false;
 
 	// GROWTH TRIGGERING LOGIC
-	let isFirstBranchGrowing = false;
+	let isFirstBranchGrowing = true;
 	let rainCounter = 0;
 	let rainInterval;
 	let rainTriggeringStartTimestamp = null;
+
+	let blooming = false;
+	isMagicSeedBloomTriggered.subscribe((value) => {
+		blooming = value;
+	});
+	let leftOffset = 0;
+	magicSeedBloomLeftOffset.subscribe((value) => {
+		leftOffset = value;
+	});
+	
+
 
 	isRainTriggered.subscribe((value) => {
 		if (value) {
@@ -337,7 +349,7 @@
 				{allTheBranches}
 				on:branchMagicSeedWasClicked={handleMagicSeedClick}
 			/>
-			<MagicSeed slot="magicSeedSlot" growing="true" rotation="0" parentLength="0" />
+			<MagicSeed slot="magicSeedSlot" growing="true" rotation="0" parentLength="0" {blooming} {leftOffset}/>
 		</BoxWithTarget>
 	</div>
 </div>
