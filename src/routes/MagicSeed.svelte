@@ -8,25 +8,84 @@
 </script>
 
 <div
-	class="magic-seed holographic"
-	class:growing
-	class:blooming
-	style="
-		bottom: {parentLength};
-		transform: rotate({rotation});
-		--leftOffset: {leftOffset}px;
-	"
-/>
+class="magic-seed holographic"
+class:growing
+class:blooming
+style="
+	bottom: {parentLength};
+	transform: rotate({rotation});
+	--leftOffset: {leftOffset}px;
+"
+>
+{#if blooming}
+<div class="center-elements-grid">
+	<div></div>
+	<a class="soundcloud-link slant mystical-alpha" href="https://on.soundcloud.com/RLm1XLikU6wCHiiv9">
+		S O U N D C L O U D
+	</a>
+	<div></div>
+</div>
+{/if}
+</div>
 
 <style>
+	.center-elements-grid {
+		display: grid;
+		place-items: center; /* Center horizontally and vertically */
+		width: 100%; /* Ensure it takes the full width of the container */
+		height: 100%; /* Ensure it takes the full height of the container */
+	}
+
+	.top-left-corner {
+		position: absolute;
+		left:0;
+		top:0;
+	}
+	.top-right-corner {
+		position: absolute;
+		right:0;
+		top:0;
+		transform: scaleX(-1);
+	}
+	.bottom-left-corner {
+		position: absolute;
+		left:0;
+		bottom:0;
+	}
+	.bottom-right-corner {
+		position: absolute;
+		right:0;
+		bottom:0;
+		transform: scaleX(-1);
+	}
+
+	.mystical-alpha {
+		font-family: 'MysticalAlpha';
+		font-size: 4vh;
+	}
+
+	.slant {
+		transform: scale(1) rotate(0deg) translate(0px, 0px) skew(0, 0deg);
+	}
+
+	.soundcloud-link {
+		display: block;
+		font-weight: bold;
+		text-align: center;
+		writing-mode: vertical-rl;
+		text-orientation: upright;
+		text-decoration: none;
+		opacity: 0.9;
+	}
+
 	.magic-seed {
 		position: absolute;
 		width: 0;
 		height: 0;
 		left:0;
 		transition:
-			height 0.2s ease-out,
-			width 0.2s ease-out,
+			height 1s ease-out,
+			width 1s ease-out,
 			transform 1s ease-out;
 	}
 

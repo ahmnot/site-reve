@@ -1,6 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
-	import '../global.css';
+	import '../css/global.css';
+	import '../css/fonts.css';
 	import Level1 from './Level1.svelte';
 	import Ripple from './Ripple.svelte';
 	import FlippableCard from './FlippableCard.svelte';

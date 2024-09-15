@@ -1,5 +1,4 @@
 <script>
-	import '../global.css';
 	import Tree from './Tree.svelte';
 	import BoxWithTarget from './BoxWithTarget.svelte';
 	import Rain from './Rain.svelte';
@@ -13,7 +12,7 @@
 	let oldMagicSeedWasClicked = false;
 
 	// GROWTH TRIGGERING LOGIC
-	let isFirstBranchGrowing = true;
+	let isFirstBranchGrowing = false;
 	let rainCounter = 0;
 	let rainInterval;
 	let rainTriggeringStartTimestamp = null;
@@ -27,6 +26,7 @@
 		leftOffset = value;
 	});
 	
+	let isCloudAndRainHidden = false;
 
 
 	isRainTriggered.subscribe((value) => {
@@ -47,6 +47,7 @@
 							isFirstBranchGrowing = true;
 							clearInterval(rainInterval); // Stop the interval when the branch starts growing
 							rainInterval = null; // Clear the interval reference
+							isCloudAndRainHidden = true;
 						}
 					}
 				}, 100); // Increment every 100ms
@@ -277,7 +278,7 @@
 
 	$: innerHeight = 0;
 
-	$: trunkNumberOfBranches = Math.floor(innerHeight / 45);
+	$: trunkNumberOfBranches = Math.floor(innerHeight / 42);
 	$: initialBranchWidth = Math.floor(innerHeight / 33);
 	$: initialBranchLength = initialBranchWidth;
 	$: magicSeedBranchPosition = Math.floor((2 * trunkNumberOfBranches) / 3) - 2;
@@ -331,7 +332,7 @@
 
 <div class="outer-container">
 	<div class="central" class:expanded>
-		<BoxWithTarget {expanded} {toggleExpanded} {oldMagicSeedWasClicked}>
+		<BoxWithTarget {expanded} {toggleExpanded} {oldMagicSeedWasClicked} {isCloudAndRainHidden}>
 			<Nuage slot="boxTarget" />
 			<Rain
 				slot="appearsWhenBoxInBoxTarget"
@@ -349,7 +350,7 @@
 				{allTheBranches}
 				on:branchMagicSeedWasClicked={handleMagicSeedClick}
 			/>
-			<MagicSeed slot="magicSeedSlot" growing="true" rotation="0" parentLength="0" {blooming} {leftOffset}/>
+			<MagicSeed slot="magicSeedSlot" growing="true" rotation="0" parentLength="0" {blooming} {leftOffset}></MagicSeed>
 		</BoxWithTarget>
 	</div>
 </div>

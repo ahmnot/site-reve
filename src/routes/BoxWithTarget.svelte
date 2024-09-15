@@ -19,18 +19,21 @@
 
 	export let oldMagicSeedWasClicked;
 
+	export let isCloudAndRainHidden = false;
+
 	let newMagicSeedElem;
 
-	let box;
+	let boxWithAWord;
 	let newMagicSeed;
 	let isGrabbing = false;
 	let ground, leftWall, rightWall, ceiling;
 	let engine;
 
 	let magicSeedHasHitGround = false;
+	let magicSeedHasBeenGrabbed = false;
 
-	$: if (expanded && box && engine) {
-		Matter.Body.setStatic(box.body, false);
+	$: if (expanded && boxWithAWord && engine) {
+		Matter.Body.setStatic(boxWithAWord.body, false);
 		Matter.Body.setStatic(newMagicSeed.body, true);
 		engine.gravity.y = 1;
 	}
@@ -41,18 +44,27 @@
 
 	$: innerWidth = 0;
 
+	let isMouseDown = false; // To track if the mouse is currently pressed down
+
 	onMount(() => {
+
 		isMobile = /iPhone|iPad|iPod|Android/i.test(window.navigator.userAgent);
 
 		engine = Matter.Engine.create();
-		engine.gravity.y = 0.001;
+		engine.gravity.y = 1;
 
-		const boxBody = Matter.Bodies.rectangle(window.innerWidth / 2, window.innerHeight / 2, 50, 50);
+		const boxWithAWordBody = Matter.Bodies.rectangle(window.innerWidth / 2, window.innerHeight / 2, 50, 50);
 		const newMagicSeedBody = Matter.Bodies.rectangle(
 			window.innerWidth / 4,
 			window.innerHeight / 2,
 			50,
-			50
+			50,
+			{
+				collisionFilter: {
+					category: 0x0002, // This is a unique category for the magic seed
+					mask: 0x0001 // This ensures it won't be grabbed by the mouseConstraint
+				}
+			}
 		);
 
 		ground = Matter.Bodies.rectangle(
@@ -90,11 +102,14 @@
 			constraint: {
 				render: { visible: false },
 				stiffness: 0.8
+			},
+			collisionFilter: {
+				mask: 0x0001 // Exclude the magic seed from the mouse interaction
 			}
 		});
 
 		Matter.Composite.add(engine.world, [
-			boxBody,
+			boxWithAWordBody,
 			newMagicSeedBody,
 			ground,
 			leftWall,
@@ -103,11 +118,11 @@
 			mouseConstraint
 		]);
 
-		const boxElem = document.querySelector('#box');
+		const boxWithAWordElem = document.querySelector('#boxWithAWord');
 
-		box = {
-			body: boxBody,
-			elem: boxElem,
+		boxWithAWord = {
+			body: boxWithAWordBody,
+			elem: boxWithAWordElem,
 			render() {
 				const { x, y } = this.body.position;
 				this.elem.style.top = `${y - 25}px`;
@@ -177,7 +192,7 @@
 			if (newMagicSeedElem.style.visibility === 'visible') {
 				timeSinceNewMagicSeedVisible++;
 			}
-			const boxPos = box.body.position;
+			const boxWithAWordPos = boxWithAWord.body.position;
 			const targetPos = targetElem.getBoundingClientRect();
 			const targetCenter = {
 				x: targetPos.left + targetPos.width / 2,
@@ -185,20 +200,20 @@
 			};
 
 			const distance = Math.sqrt(
-				Math.pow(boxPos.x - targetCenter.x, 2) + Math.pow(boxPos.y - targetCenter.y, 2)
+				Math.pow(boxWithAWordPos.x - targetCenter.x, 2) + Math.pow(boxWithAWordPos.y - targetCenter.y, 2)
 			);
 
 			if (distance < 50) {
-				Matter.Body.setPosition(box.body, targetCenter);
-				Matter.Body.setVelocity(box.body, { x: 0, y: 0 });
-				Matter.Body.setAngularVelocity(box.body, 0);
+				Matter.Body.setPosition(boxWithAWord.body, targetCenter);
+				Matter.Body.setVelocity(boxWithAWord.body, { x: 0, y: 0 });
+				Matter.Body.setAngularVelocity(boxWithAWord.body, 0);
 				isRainTriggered.set(true);
 			} else {
 				isRainTriggered.set(false);
 			}
 
 			// Increase the angular velocity over time
-			if (!magicSeedHasHitGround && newMagicSeed && !newMagicSeed.body.isStatic) {
+			if (!(magicSeedHasHitGround || magicSeedHasBeenGrabbed) && newMagicSeed && !newMagicSeed.body.isStatic) {
 					const currentAngularVelocity = newMagicSeed.body.angularVelocity;
 					// This is for the "falling in the wind" animation
 					if (timeSinceNewMagicSeedVisible <= 50) {
@@ -218,7 +233,7 @@
 			// Update the X position of newMagicSeed
 			magicSeedPositionX = newMagicSeed.body.position.x;
 
-			box.render();
+			boxWithAWord.render();
 			newMagicSeed.render();
 			Matter.Engine.update(engine);
 			requestAnimationFrame(render);
@@ -232,8 +247,7 @@
 
 		const handleMouseUp = () => {
 			isGrabbing = false;
-			boxElem.style.cursor = 'grab';
-			newMagicSeedElem.style.cursor = 'grab';
+			boxWithAWordElem.style.cursor = 'grab';
 			document.body.style.cursor = 'default';
 			document.removeEventListener('mousemove', handleMouseMove);
 			document.removeEventListener('mouseup', handleMouseUp);
@@ -241,15 +255,14 @@
 
 		const handleMouseMove = () => {
 			if (isGrabbing) {
-				boxElem.style.cursor = 'grabbing';
-				newMagicSeedElem.style.cursor = 'grabbing';
+				boxWithAWordElem.style.cursor = 'grabbing';
 				document.body.style.cursor = 'grabbing';
 			}
 		};
 
-		boxElem.addEventListener('mousedown', () => {
+		boxWithAWordElem.addEventListener('mousedown', () => {
 			isGrabbing = true;
-			boxElem.style.cursor = 'grabbing';
+			boxWithAWordElem.style.cursor = 'grabbing';
 			document.body.style.cursor = 'grabbing';
 			document.addEventListener('mousemove', handleMouseMove);
 			document.addEventListener('mouseup', handleMouseUp);
@@ -287,6 +300,7 @@
 						isMagicSeedBloomTriggered.set(true);
 
 						newMagicSeedElem.style.cursor = "default";
+
 						//Matter.Body.setStatic(newMagicSeed.body, true);
 					}, 1500); // Délai avant de commencer la croissance
 
@@ -314,29 +328,49 @@
 
     let magicSeedPositionX = 0;
 
+	$: {
+    if (isCloudAndRainHidden) {
+        setTimeout(() => {
+            const elements = document.querySelectorAll('.hasToBeDestroyed');
+            elements.forEach((element) => {
+                element.remove();
+            });
+        }, 5000); // Adjust the delay (5000ms = 5s) as needed
+    }
+	}
+
 </script>
 
 <svelte:window bind:innerWidth />
 
 <div id="target" class:hidden={!expanded}>
 	
-	<slot name="boxTarget"></slot>
-	{#if $isRainTriggered}
-		<slot name="appearsWhenBoxInBoxTarget"></slot>
-	{/if}
+	<div class:isCloudAndRainHidden>
+		<slot name="boxTarget"></slot>
+		{#if $isRainTriggered}
+			<div class="hasToBeDestroyed">
+				<slot name="appearsWhenBoxInBoxTarget"></slot>
+			</div>
+		{/if}
+		
+	</div>
 	<!-- slot for the tree -->
 	<slot name="treeSlot"></slot>
 
 </div>
-<button id="box" on:click={toggleExpanded}>{expanded ? 'pluie' : 'rêve'}</button>
+
+<button id="boxWithAWord" on:click={toggleExpanded} class:isCloudAndRainHidden class="hasToBeDestroyed">{expanded ? 'pluie' : 'rêve'}</button>
 
 <div id="newMagicSeed" >
-	<slot name="magicSeedSlot" >
-		<p>TOTO</p></slot>
+	<slot name="magicSeedSlot" ></slot>
 </div>
 
 
 <style>
+	.hasToBeDestroyed{
+		overflow: hidden;
+	}
+	
 	:root {
 		overflow: hidden;
 	}
@@ -355,7 +389,7 @@
 		opacity: 0;
 	}
 
-	#box {
+	#boxWithAWord {
 		position: absolute;
 		height: 50px;
 		width: 50px;
@@ -380,9 +414,15 @@
 		justify-content: center;
 		user-select: none;
 		overflow: visible;
-		cursor: pointer;
+		cursor: default;
 		border: none;
 		visibility: hidden;
 		background-color: transparent;
+	}
+
+	.isCloudAndRainHidden {
+		opacity: 0;
+		transition: opacity 5s ease-in-out,
+		left 10s ease-in-out;
 	}
 </style>
