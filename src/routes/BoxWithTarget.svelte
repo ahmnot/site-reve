@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { magicSeedPositionWritable } from '../lib/magicSeedPositionStore.js';
 	import { isRainTriggered } from '../lib/rainStore.js';
-	import { isMagicSeedBloomTriggered, magicSeedBloomLeftOffset } from '../lib/magicSeedBloomStore.js';
+	import { isMagicSeedBloomTriggered, magicSeedBloomLeftOffset, magicSeedBloomBottomOffset } from '../lib/magicSeedBloomStore.js';
 
 	let oldMagicSeedPosition;
 	let isMobile;
@@ -43,8 +43,7 @@
 	let growthTimeout;
 
 	$: innerWidth = 0;
-
-	let isMouseDown = false; // To track if the mouse is currently pressed down
+	$: innerHeight = 0;
 
 	onMount(() => {
 
@@ -232,6 +231,7 @@
 
 			// Update the X position of newMagicSeed
 			magicSeedPositionX = newMagicSeed.body.position.x;
+			magicSeedPositionY = newMagicSeed.body.position.y;
 
 			boxWithAWord.render();
 			newMagicSeed.render();
@@ -301,7 +301,7 @@
 
 						newMagicSeedElem.style.cursor = "default";
 
-						//Matter.Body.setStatic(newMagicSeed.body, true);
+						Matter.Body.setStatic(newMagicSeed.body, true);
 					}, 1500); // Délai avant de commencer la croissance
 
 				}
@@ -327,6 +327,7 @@
 	}
 
     let magicSeedPositionX = 0;
+    let magicSeedPositionY = 0;
 
 	$: {
     if (isCloudAndRainHidden) {
@@ -339,9 +340,12 @@
     }
 	}
 
+	$: magicSeedBloomLeftOffset.set(-(magicSeedPositionX - (25 + innerWidth/2)));
+	$: magicSeedBloomBottomOffset.set((magicSeedPositionY - (innerHeight - 25)));
+
 </script>
 
-<svelte:window bind:innerWidth />
+<svelte:window bind:innerWidth bind:innerHeight />
 
 <div id="target" class:hidden={!expanded}>
 	

@@ -1,6 +1,7 @@
 @font-face {
     font-family: 'MysticalAlpha';
-    src: url('/fonts/MysticalAlpha.ttf') format('truetype');
+    src: url('/fonts/MysticalAlpha/MysticalAlpha.woff2') format('woff2'),
+        url('/fonts/MysticalAlpha/MysticalAlpha.woff') format('woff');
     font-weight: normal;
     font-style: normal;
     font-display: block;

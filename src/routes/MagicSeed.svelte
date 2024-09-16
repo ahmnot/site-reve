@@ -5,6 +5,7 @@
 
 	export let blooming=false;
 	export let leftOffset=0;
+	export let bottomOffset=0;
 </script>
 
 <div
@@ -15,6 +16,7 @@ style="
 	bottom: {parentLength};
 	transform: rotate({rotation});
 	--leftOffset: {leftOffset}px;
+	--bottomOffset: {bottomOffset}px;
 "
 >
 {#if blooming}
@@ -31,32 +33,9 @@ style="
 <style>
 	.center-elements-grid {
 		display: grid;
-		place-items: center; /* Center horizontally and vertically */
-		width: 100%; /* Ensure it takes the full width of the container */
-		height: 100%; /* Ensure it takes the full height of the container */
-	}
-
-	.top-left-corner {
-		position: absolute;
-		left:0;
-		top:0;
-	}
-	.top-right-corner {
-		position: absolute;
-		right:0;
-		top:0;
-		transform: scaleX(-1);
-	}
-	.bottom-left-corner {
-		position: absolute;
-		left:0;
-		bottom:0;
-	}
-	.bottom-right-corner {
-		position: absolute;
-		right:0;
-		bottom:0;
-		transform: scaleX(-1);
+		place-items: center; 
+		width: 100%;
+		height: 100%;
 	}
 
 	.mystical-alpha {
@@ -124,10 +103,12 @@ style="
 		height: 100vh; 
 		width: 50vw; 
 		left: var(--leftOffset);
+		bottom: var(--bottomOffset) !important;
 		transition:
 			height 0.25s ease-in-out,
 			width 1.5s ease-in-out,
 			transform 1s ease-out,
-			left 1.5s ease-in-out;
+			left 1.5s ease-in-out,
+			bottom 1s ease-in-out;
 	}
 </style>
