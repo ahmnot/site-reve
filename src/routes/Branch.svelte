@@ -135,6 +135,8 @@
 		transition: height 0.05s ease-out;
 		transform-origin: bottom center;
 		will-change: transform, height;
+		transform: translateZ(0);
+		backface-visibility: hidden;
 	}
 
 	.branch.windy {

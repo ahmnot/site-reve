@@ -34,6 +34,7 @@
 	
 	let isCloudAndRainHidden = false;
 
+	
 
 	isRainTriggered.subscribe((value) => {
 		if (value) {
@@ -137,7 +138,8 @@
 		let magicSeedCondition =
 			depth == initialDepth - 1 &&
 			!magicSeedGenerated &&
-			trunkBranchPosition > magicSeedBranchPosition;
+			trunkBranchPosition > magicSeedBranchPosition
+			&& !oldMagicSeedWasClicked;
 
 		let parentBranch = {
 			id: generateUniqueId(baseId),
@@ -204,6 +206,7 @@
 			};
 
 			// Generation of magic seed on a special branch at approximately at 2/3 of the main branch, on the tip of that branch
+			// We don't re-generate the magic seed if it was already clicked.
 			if (magicSeedCondition && i == numberOfBranches - 1) {
 				childBranch.childBranches.push({
 					id: generateUniqueId(`${childBranch.id}-seed`),
@@ -217,7 +220,7 @@
 				magicSeedAngle = absoluteAngle;
 			}
 
-			// Leaves generated on magic branchThe i < 7 is here to prevent leaves overlapping the magic seed
+			// Leaves generated on magic branch : The i < 7 is here to prevent leaves overlapping the magic seed
 			if (magicSeedCondition && i < 7) {
 				childBranch.childBranches.push({
 					id: generateUniqueId(`${childBranch.id}-leaf`),
@@ -381,6 +384,7 @@
 		align-items: center;
 		font-size: 1.5em;
 		transition: all 0.5s ease-in-out;
+		z-index: 0;
 	}
 
 	.central.expanded {

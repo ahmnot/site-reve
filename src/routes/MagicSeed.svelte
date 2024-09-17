@@ -1,5 +1,7 @@
 <script>
 	import { vigenereEncode } from '../lib/helpers/crypto.js';
+	import Negative from './NegativeCube.svelte';
+
 	export let growing = false;
 	export let rotation;
 	export let parentLength;
@@ -7,6 +9,18 @@
 	export let blooming=false;
 	export let leftOffset=0;
 	export let bottomOffset=0;
+
+	let showMysticalScripture = false; 
+
+	$: if (blooming) {
+		setTimeout(() => {
+			//fade in the mystical scripture after a delay
+			showMysticalScripture = true; 
+		}, 1000);
+	}
+
+	// Split the encoded text into an array of letters
+	const mysticalText = vigenereEncode("S O U N D C L D").split("");
 </script>
 
 <div
@@ -23,62 +37,41 @@ style="
 {#if blooming}
 <div class="center-elements-grid">
 	<div></div>
-	<a class="soundcloud-link slant mystical-alpha" href="https://on.soundcloud.com/RLm1XLikU6wCHiiv9">
-		{vigenereEncode("S O U N D C L D")}
-	</a>
+		<a class="soundcloud-link slant mystical-alpha" href="https://on.soundcloud.com/RLm1XLikU6wCHiiv9">
+			{#each mysticalText as letter, index}
+				{#if letter === ' '}
+					<span>&nbsp;</span>
+				{:else}
+					<span 
+						class="{showMysticalScripture ? 'fade-in-letter' : ''}"
+						style="transition-delay: {index * 0.2}s"
+					>
+						{letter}
+					</span>
+				{/if}
+			{/each}
+		</a>
 	<div></div>
 </div>
 {/if}
 </div>
 
 <style>
-	.center-elements-grid {
-		display: grid;
-		place-items: center; 
-		width: 100%;
-		height: 100%;
+
+
+	span {
+		opacity: 0;
+		display: inline-block;
 	}
 
-	.mystical-alpha {
-		font-family: 'MysticalAlpha';
-		font-size: 4vh;
-	}
-
-	.slant {
-		transform: scale(1) rotate(0deg) translate(0px, 0px) skew(0, 0deg);
-	}
-
-	.soundcloud-link {
-		display: block;
-		padding: 10px;
-		font-weight: normal;
-		text-align: center;
-		writing-mode: vertical-rl;
-		text-orientation: upright;
-		text-decoration: none;
-		opacity: 0.9;
-		color: transparent;
+	.fade-in-letter {
+		opacity: 1;
+		transition: opacity 5s ease-in-out;
 		background-image: linear-gradient(45deg, #C0C0C0, #E0E0E0, #F5F5F5, #C0C0C0);
 		background-size: 400% 400%;
 		-webkit-background-clip: text;
 		background-clip: text;
 		animation: shimmer 3s ease-in-out infinite;
-		cursor: pointer;
-		text-shadow: 
-			1px 1px 0px rgba(0, 0, 0, 0.1), 
-			1px 1px 0px rgba(0, 0, 0, 0.1);
-	}
-
-	@keyframes shimmer {
-		0% {
-			background-position: 0% 50%;
-		}
-		50% {
-			background-position: 100% 50%;
-		}
-		100% {
-			background-position: 0% 50%;
-		}
 	}
 
 	.magic-seed {
@@ -90,6 +83,8 @@ style="
 			height 1s ease-out,
 			width 1s ease-out,
 			transform 1s ease-out;
+		transform: translateZ(0);
+		backface-visibility: hidden;
 	}
 
 	.magic-seed.growing {
@@ -134,5 +129,52 @@ style="
 			transform 1s ease-out,
 			left 1.5s ease-in-out,
 			bottom 1s ease-in-out;
+			z-index: 75 !important;
+	}
+
+	.center-elements-grid {
+		display: grid;
+		place-items: center; 
+		width: 100%;
+		height: 100%;
+	}
+
+	.mystical-alpha {
+		font-family: 'MysticalAlpha';
+		font-size: 4vh;
+	}
+
+	.slant {
+		transform: scale(1) rotate(0deg) translate(0px, 0px) skew(0, 0deg);
+	}
+
+	.soundcloud-link {
+		display: block;
+		padding: 10px;
+		font-weight: normal;
+		text-align: center;
+		writing-mode: vertical-rl;
+		text-orientation: upright;
+		text-decoration: none;
+		opacity: 0.9;
+		color: transparent;
+		cursor: pointer;
+		text-shadow: 
+			1px 1px 0px rgba(0, 0, 0, 0.1), 
+			1px 1px 0px rgba(0, 0, 0, 0.1);
+		transform: translateZ(0);
+		backface-visibility: hidden;
+	}
+
+	@keyframes shimmer {
+		0% {
+			background-position: 0% 50%;
+		}
+		50% {
+			background-position: 100% 50%;
+		}
+		100% {
+			background-position: 0% 50%;
+		}
 	}
 </style>

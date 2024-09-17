@@ -3,6 +3,7 @@
 	import { magicSeedPositionWritable } from '../lib/magicSeedPositionStore.js';
 	import { isRainTriggered } from '../lib/rainStore.js';
 	import { isMagicSeedBloomTriggered, magicSeedBloomLeftOffset, magicSeedBloomBottomOffset } from '../lib/magicSeedBloomStore.js';
+	import NegativeCube from './NegativeCube.svelte';
 
 	let oldMagicSeedPosition;
 	let isMobile;
@@ -44,6 +45,8 @@
 
 	$: innerWidth = 0;
 	$: innerHeight = 0;
+
+	let showNegativeCube = false;
 
 	onMount(() => {
 
@@ -343,6 +346,13 @@
 	$: magicSeedBloomLeftOffset.set(-(magicSeedPositionX - (25 + innerWidth/2)));
 	$: magicSeedBloomBottomOffset.set((magicSeedPositionY - (innerHeight - 25)));
 
+	$: if ($isMagicSeedBloomTriggered) {
+		// Delay showing the NegativeCube component
+		setTimeout(() => {
+			showNegativeCube = true;
+		}, 1000);
+	}
+
 </script>
 
 <svelte:window bind:innerWidth bind:innerHeight />
@@ -369,6 +379,10 @@
 	<slot name="magicSeedSlot" ></slot>
 </div>
 
+{#if showNegativeCube}
+	<NegativeCube />
+{/if}
+
 
 <style>
 	.hasToBeDestroyed{
@@ -377,6 +391,7 @@
 	
 	:root {
 		overflow: hidden;
+		z-index: 25;
 	}
 
 	#target {
@@ -422,6 +437,7 @@
 		border: none;
 		visibility: hidden;
 		background-color: transparent;
+		z-index: 50;
 	}
 
 	.isCloudAndRainHidden {

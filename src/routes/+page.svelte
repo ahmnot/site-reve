@@ -8,7 +8,7 @@
 	import { startRipples, stopRipples, updateMousePosition } from '../lib/rippleStore.js';
 	import MatterWorld from './MatterWorld.svelte';
 	import ThreeWorld from './ThreeWorld.svelte';
-	import Negative from './Negative.svelte';
+	import NegativeCube from './NegativeCube.svelte';
 </script>
 
 <Level1 />

@@ -17,15 +17,17 @@
         const simpleCubeFS = await loadShader('src/lib/shaders/simpleCubeFS.glsl');
 
         const scene = new Scene();
-        const camera = new PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.01, 100);
-        camera.position.set(-3, 2.5, -3);
+        const camera = new PerspectiveCamera(22.5, container.clientWidth / container.clientHeight, 0.01, 100);
+        camera.position.set(-40, 20, -40);
 
-        const renderer = new WebGLRenderer({ antialias: true });
+        const renderer = new WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
-        renderer.setClearColor(0xffe4c4);
+        renderer.setClearColor( 0xff0000, 0 );
         container.appendChild(renderer.domElement);
 
         const controls = new OrbitControls(camera, renderer.domElement);
+        controls.target.set(10, -2.5, -2);
+        controls.update();
 
         const pointLight = new PointLight(0xffffff, 1, 100);
         scene.add(pointLight);
@@ -115,7 +117,8 @@
     div {
         width: 100%;
         height: 100%;
-        position: relative;
+        left:0%;
+        position: absolute;
     }
 </style>
 
