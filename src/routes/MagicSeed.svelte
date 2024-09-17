@@ -1,4 +1,5 @@
 <script>
+	import { vigenereEncode } from '../lib/helpers/crypto.js';
 	export let growing = false;
 	export let rotation;
 	export let parentLength;
@@ -23,7 +24,7 @@ style="
 <div class="center-elements-grid">
 	<div></div>
 	<a class="soundcloud-link slant mystical-alpha" href="https://on.soundcloud.com/RLm1XLikU6wCHiiv9">
-		S O U N D C L O U D
+		{vigenereEncode("S O U N D C L D")}
 	</a>
 	<div></div>
 </div>
@@ -49,19 +50,42 @@ style="
 
 	.soundcloud-link {
 		display: block;
-		font-weight: bold;
+		padding: 10px;
+		font-weight: normal;
 		text-align: center;
 		writing-mode: vertical-rl;
 		text-orientation: upright;
 		text-decoration: none;
 		opacity: 0.9;
+		color: transparent;
+		background-image: linear-gradient(45deg, #C0C0C0, #E0E0E0, #F5F5F5, #C0C0C0);
+		background-size: 400% 400%;
+		-webkit-background-clip: text;
+		background-clip: text;
+		animation: shimmer 3s ease-in-out infinite;
+		cursor: pointer;
+		text-shadow: 
+			1px 1px 0px rgba(0, 0, 0, 0.1), 
+			1px 1px 0px rgba(0, 0, 0, 0.1);
+	}
+
+	@keyframes shimmer {
+		0% {
+			background-position: 0% 50%;
+		}
+		50% {
+			background-position: 100% 50%;
+		}
+		100% {
+			background-position: 0% 50%;
+		}
 	}
 
 	.magic-seed {
 		position: absolute;
 		width: 0;
 		height: 0;
-		left:0;
+		left: 0;
 		transition:
 			height 1s ease-out,
 			width 1s ease-out,
