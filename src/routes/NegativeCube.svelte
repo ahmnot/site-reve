@@ -5,16 +5,12 @@
 
     let container;
 
-    const loadShader = async (url) => {
-        const response = await fetch(url);
-        return response.text();
-    };
-
+    import iridescentCubeVS from '../lib/shaders/iridescentCubeVS.glsl';
+    import iridescentCubeFS from '../lib/shaders/iridescentCubeFS.glsl';
+    import simpleCubeVS from '../lib/shaders/simpleCubeVS.glsl';
+    import simpleCubeFS from '../lib/shaders/simpleCubeFS.glsl';
+    
     onMount(async () => {
-        const iridescentCubeVS = await loadShader('src/lib/shaders/iridescentCubeVS.glsl');
-        const iridescentCubeFS = await loadShader('src/lib/shaders/iridescentCubeFS.glsl');
-        const simpleCubeVS = await loadShader('src/lib/shaders/simpleCubeVS.glsl');
-        const simpleCubeFS = await loadShader('src/lib/shaders/simpleCubeFS.glsl');
 
         const scene = new Scene();
         const camera = new PerspectiveCamera(22.5, container.clientWidth / container.clientHeight, 0.01, 100);
