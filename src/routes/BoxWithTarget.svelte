@@ -380,7 +380,7 @@
 </div>
 
 {#if showNegativeCube}
-	<NegativeCube />
+	<slot name="negativeCubeSlot" ></slot>
 {/if}
 
 

@@ -3,6 +3,15 @@
     import { PerspectiveCamera, Scene, WebGLRenderer, PointLight, ShaderMaterial, BoxGeometry, Mesh, Vector3, Matrix4, Clock } from 'three';
     import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
+    import { createEventDispatcher } from 'svelte';
+
+    /** Sert à transférer les mouvements de souris aux branches en dessous */
+    const dispatch = createEventDispatcher();
+
+    function handlePointerMove(event) {
+        dispatch('pointerOverCubeScene', { x: event.clientX, y: event.clientY });
+    }
+
     let container;
 
     import iridescentCubeVS from '../lib/shaders/iridescentCubeVS.glsl';
@@ -118,4 +127,4 @@
     }
 </style>
 
-<div bind:this={container}></div>
+<div bind:this={container} on:pointermove={handlePointerMove}></div>

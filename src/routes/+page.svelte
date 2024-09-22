@@ -25,7 +25,7 @@
         </div>
         <div></div>
         <div class="negative-div">
-            <Negative />
+            <NegativeCube />
         </div>
         <div></div>
         <div>

@@ -80,8 +80,9 @@
 		--branchLength: {length};
 		--rotation: {rotation};
 		"
-		on:mouseenter={startSway}
-		on:mouseleave={stopSway}
+   		on:pointerOverCubeScene={startSway}
+		on:pointerover={startSway}
+		on:pointerleave={stopSway}
 		on:touchstart={startSway} on:touchend={stopSway}
 	>
 		{#each childBranches as branch (branch.id)}

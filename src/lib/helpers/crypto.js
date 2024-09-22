@@ -42,3 +42,27 @@ export function vigenereEncode(plaintext, keyword = "pluie") {
   const encodedText = vigenereEncode(originalText, keyword);
   const decodedText = vigenereDecode(encodedText, keyword);
   
+
+	// Function to randomly choose one or two consecutive letters
+	export function getRandomOneOrTwoLetters(textArray) {
+		const length = textArray.length;
+		const showTwoLetters = Math.random() > 0; // 100% chance to show 2 letters
+		let selectedLetters = [];
+
+		if (showTwoLetters && length > 1) {
+			// Select a random starting index ensuring there's room for two letters
+			const startIndex = Math.floor(Math.random() * (length - 1));
+			selectedLetters = [textArray[startIndex], textArray[startIndex + 1]];
+		} else {
+			// Select a random single letter
+			const index = Math.floor(Math.random() * length);
+			selectedLetters = [textArray[index]];
+		}
+		return selectedLetters;
+	}
+
+  export function addSpacesBetweenLetters(lettersArray) {
+    // Join the array of letters with a space
+    return lettersArray.join(" ");
+  }
+  

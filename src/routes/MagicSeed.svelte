@@ -1,6 +1,6 @@
 <script>
-	import { vigenereEncode } from '../lib/helpers/crypto.js';
-	import Negative from './NegativeCube.svelte';
+	import { vigenereEncode, getRandomOneOrTwoLetters, addSpacesBetweenLetters } from '../lib/helpers/crypto.js';
+    import { onMount } from 'svelte';
 
 	export let growing = false;
 	export let rotation;
@@ -11,6 +11,17 @@
 	export let bottomOffset=0;
 
 	let showMysticalScripture = false; 
+	let randomMysticalText;
+	let betterViewerHeight;
+	onMount(() => {
+		// Split the encoded text into an array of letters
+		const mysticalText = vigenereEncode("SOUNDCLD").split("");
+
+		randomMysticalText = getRandomOneOrTwoLetters(mysticalText);
+
+		randomMysticalText = addSpacesBetweenLetters(randomMysticalText);
+
+	})
 
 	$: if (blooming) {
 		setTimeout(() => {
@@ -19,9 +30,17 @@
 		}, 1000);
 	}
 
-	// Split the encoded text into an array of letters
-	const mysticalText = vigenereEncode("S O U N D C L D").split("");
+
+	$: innerHeight = 0;
+
+		// Reactively update --betterViewerHeight in the browser
+	$: if (typeof window !== 'undefined') {
+		betterViewerHeight = innerHeight * 0.01;
+		document.documentElement.style.setProperty('--betterViewerHeight', `${betterViewerHeight}px`);
+	}
 </script>
+
+<svelte:window bind:innerHeight />
 
 <div
 class="magic-seed holographic"
@@ -38,7 +57,7 @@ style="
 <div class="center-elements-grid">
 	<div></div>
 		<a class="soundcloud-link slant mystical-alpha" href="https://on.soundcloud.com/RLm1XLikU6wCHiiv9">
-			{#each mysticalText as letter, index}
+			{#each randomMysticalText as letter, index}
 				{#if letter === ' '}
 					<span>&nbsp;</span>
 				{:else}
@@ -58,6 +77,9 @@ style="
 
 <style>
 
+	:root {
+		--safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+	}
 
 	span {
 		opacity: 0;
@@ -119,7 +141,7 @@ style="
 	}
 
 	.magic-seed.blooming {
-		height: 100vh; 
+		height: calc(var(--betterViewerHeight) * 100);
 		width: 50vw; 
 		left: var(--leftOffset);
 		bottom: var(--bottomOffset) !important;
@@ -133,7 +155,9 @@ style="
 	}
 
 	.center-elements-grid {
-		display: grid;
+		display: flex;
+		justify-content: center; /* Centre horizontalement */
+		align-items: center;    /* Centre verticalement */
 		place-items: center; 
 		width: 100%;
 		height: 100%;

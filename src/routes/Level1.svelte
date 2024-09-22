@@ -4,6 +4,8 @@
 	import Rain from './Rain.svelte';
 	import Nuage from './Nuage.svelte';
 	import MagicSeed from './MagicSeed.svelte';
+	import NegativeCube from './NegativeCube.svelte';
+
 	import { isRainTriggered } from '../lib/rainStore.js';
 	import { isMagicSeedBloomTriggered, magicSeedBloomLeftOffset, magicSeedBloomBottomOffset } from '../lib/magicSeedBloomStore.js';
 
@@ -287,10 +289,10 @@
 
 	$: innerHeight = 0;
 
-	$: trunkNumberOfBranches = Math.floor(innerHeight / 42);
-	$: initialBranchWidth = Math.floor(innerHeight / 33);
+	$: trunkNumberOfBranches = innerHeight / 42;
+	$: initialBranchWidth = innerHeight / 33;
 	$: initialBranchLength = initialBranchWidth;
-	$: magicSeedBranchPosition = Math.floor((2 * trunkNumberOfBranches) / 3) - 2;
+	$: magicSeedBranchPosition = (2 * trunkNumberOfBranches) / 3 - 2;
 
 	// Reset magicSeedGenerated when window is resized
 	$: if (innerHeight) {
@@ -360,6 +362,8 @@
 				on:branchMagicSeedWasClicked={handleMagicSeedClick}
 			/>
 			<MagicSeed slot="magicSeedSlot" growing="true" rotation="0" parentLength="0" {blooming} {leftOffset} {bottomOffset}></MagicSeed>
+		
+			<NegativeCube slot="negativeCubeSlot" />
 		</BoxWithTarget>
 	</div>
 </div>
