@@ -56,7 +56,11 @@ style="
 {#if blooming}
 <div class="center-elements-grid">
 	<div></div>
-		<a class="soundcloud-link slant mystical-alpha" href="https://on.soundcloud.com/RLm1XLikU6wCHiiv9">
+		<a class="soundcloud-link slant mystical-alpha" href="https://on.soundcloud.com/RLm1XLikU6wCHiiv9" 
+		on:touchstart={(event) => {
+		  event.preventDefault(); // Empêcher le comportement par défaut du lien
+		  window.location.href = "https://on.soundcloud.com/RLm1XLikU6wCHiiv9";
+		}}>
 			{#each randomMysticalText as letter, index}
 				{#if letter === ' '}
 					<span>&nbsp;</span>

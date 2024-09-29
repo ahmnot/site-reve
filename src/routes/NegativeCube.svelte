@@ -5,6 +5,8 @@
 
     import { createEventDispatcher } from 'svelte';
 
+    export let isVisible = false;
+
     /** Sert à transférer les mouvements de souris aux branches en dessous */
     const dispatch = createEventDispatcher();
 
@@ -124,7 +126,12 @@
         height: 100%;
         left:0%;
         position: absolute;
+        visibility: hidden;
+    }
+
+    .isVisible {
+        visibility: visible !important;
     }
 </style>
 
-<div bind:this={container} on:pointermove={handlePointerMove}></div>
+<div bind:this={container} on:pointermove={handlePointerMove} class:isVisible></div>

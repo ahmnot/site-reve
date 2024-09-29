@@ -46,8 +46,6 @@
 	$: innerWidth = 0;
 	$: innerHeight = 0;
 
-	let showNegativeCube = false;
-
 	onMount(() => {
 
 		isMobile = /iPhone|iPad|iPod|Android/i.test(window.navigator.userAgent);
@@ -346,13 +344,6 @@
 	$: magicSeedBloomLeftOffset.set(-(magicSeedPositionX - (25 + innerWidth/2)));
 	$: magicSeedBloomBottomOffset.set((magicSeedPositionY - (innerHeight - 25)));
 
-	$: if ($isMagicSeedBloomTriggered) {
-		// Delay showing the NegativeCube component
-		setTimeout(() => {
-			showNegativeCube = true;
-		}, 1000);
-	}
-
 </script>
 
 <svelte:window bind:innerWidth bind:innerHeight />
@@ -360,10 +351,10 @@
 <div id="target" class:hidden={!expanded}>
 	
 	<div class:isCloudAndRainHidden>
-		<slot name="boxTarget"></slot>
+		<slot name="nuageSlot"></slot>
 		{#if $isRainTriggered}
 			<div class="hasToBeDestroyed">
-				<slot name="appearsWhenBoxInBoxTarget"></slot>
+				<slot name="appearsWhenBoxInNuage"></slot>
 			</div>
 		{/if}
 		
@@ -379,10 +370,7 @@
 	<slot name="magicSeedSlot" ></slot>
 </div>
 
-{#if showNegativeCube}
-	<slot name="negativeCubeSlot" ></slot>
-{/if}
-
+<slot name="negativeCubeSlot" ></slot>
 
 <style>
 	.hasToBeDestroyed{

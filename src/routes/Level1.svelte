@@ -1,6 +1,6 @@
 <script>
 	import Tree from './Tree.svelte';
-	import BoxWithTarget from './BoxWithTarget.svelte';
+	import BoxWithAWordWithNuageTarget from './BoxWithAWordWithNuageTarget.svelte';
 	import Rain from './Rain.svelte';
 	import Nuage from './Nuage.svelte';
 	import MagicSeed from './MagicSeed.svelte';
@@ -337,16 +337,25 @@
 	}
 
 	$: treeGroundPosition = innerHeight *0.8;
+
+	let showNegativeCube = false;
+
+	$: if ($isMagicSeedBloomTriggered) {
+		// Delay showing the NegativeCube component
+		setTimeout(() => {
+			showNegativeCube = true;
+		}, 1000);
+	}
 </script>
 
 <svelte:window bind:innerHeight />
 
 <div class="outer-container">
 	<div class="central" class:expanded>
-		<BoxWithTarget {expanded} {toggleExpanded} {oldMagicSeedWasClicked} {isCloudAndRainHidden}>
-			<Nuage slot="boxTarget" />
+		<BoxWithAWordWithNuageTarget {expanded} {toggleExpanded} {oldMagicSeedWasClicked} {isCloudAndRainHidden}>
+			<Nuage slot="nuageSlot" />
 			<Rain
-				slot="appearsWhenBoxInBoxTarget"
+				slot="appearsWhenBoxInNuage"
 				top="40%"
 				width="80%"
 				left="3%"
@@ -363,8 +372,8 @@
 			/>
 			<MagicSeed slot="magicSeedSlot" growing="true" rotation="0" parentLength="0" {blooming} {leftOffset} {bottomOffset}></MagicSeed>
 		
-			<NegativeCube slot="negativeCubeSlot" />
-		</BoxWithTarget>
+			<NegativeCube slot="negativeCubeSlot" isVisible={showNegativeCube} />
+		</BoxWithAWordWithNuageTarget>
 	</div>
 </div>
 
