@@ -3,7 +3,6 @@
 	import { magicSeedPositionWritable } from '../lib/magicSeedPositionStore.js';
 	import { isRainTriggered } from '../lib/rainStore.js';
 	import { isMagicSeedBloomTriggered, magicSeedBloomLeftOffset, magicSeedBloomBottomOffset } from '../lib/magicSeedBloomStore.js';
-	import NegativeCube from './NegativeCube.svelte';
 
 	let oldMagicSeedPosition;
 	let isMobile;
@@ -337,7 +336,7 @@
             elements.forEach((element) => {
                 element.remove();
             });
-        }, 5000); // Adjust the delay (5000ms = 5s) as needed
+        }, 3000);
     }
 	}
 
@@ -430,7 +429,7 @@
 
 	.isCloudAndRainHidden {
 		opacity: 0;
-		transition: opacity 5s ease-in-out,
+		transition: opacity 2s ease-in-out,
 		left 10s ease-in-out;
 	}
 </style>

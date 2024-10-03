@@ -287,9 +287,12 @@
 		return finalBranches;
 	}
 
-	$: innerHeight = 0;
+	let innerHeight = 0;
 
-	$: trunkNumberOfBranches = innerHeight / 42;
+	let trunkNumberOfBranches = 0;
+	let mainBranchAngleDecrementFactor = 0.75;
+	$: innerHeight > 700 ? trunkNumberOfBranches = innerHeight / 42 : trunkNumberOfBranches = innerHeight / 30;
+	$: innerHeight > 700 ? mainBranchAngleDecrementFactor = 0.75 : mainBranchAngleDecrementFactor = 0.5;
 	$: initialBranchWidth = innerHeight / 33;
 	$: initialBranchLength = initialBranchWidth;
 	$: magicSeedBranchPosition = (2 * trunkNumberOfBranches) / 3 - 2;
@@ -322,7 +325,7 @@
 		initialBranchAngle: 0,
 		initialBranchWidth: initialBranchWidth,
 		initialBranchLength: initialBranchLength,
-		angleDecrementFactor: 0.75,
+		angleDecrementFactor: mainBranchAngleDecrementFactor,
 		widthDecrementFactor: 0.9,
 		lengthDecrementFactor: 0.97,
 		leafProbability: 0.01,

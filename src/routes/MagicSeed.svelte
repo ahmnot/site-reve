@@ -169,7 +169,7 @@ style="
 
 	.mystical-alpha {
 		font-family: 'MysticalAlpha';
-		font-size: 4vh;
+		font-size: 2em;
 	}
 
 	.slant {
