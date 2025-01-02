@@ -1,5 +1,5 @@
 <script>
-    import { ripples } from '../lib/rippleStore.js';
+    import { ripples } from '../../lib/rippleStore.js';
 </script>
 
 <div role="button" tabindex="0">

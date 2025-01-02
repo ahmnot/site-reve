@@ -1,9 +1,9 @@
 <script>
-	import Tree from './Tree.svelte';
+	import Tree from './tree-components/Tree.svelte';
 	import BoxWithAWordWithNuageTarget from './BoxWithAWordWithNuageTarget.svelte';
-	import Rain from './Rain.svelte';
-	import Nuage from './Nuage.svelte';
-	import MagicSeed from './MagicSeed.svelte';
+	import Rain from './nuage-components/Rain.svelte';
+	import Nuage from './nuage-components/Nuage.svelte';
+	import MagicSeed from './tree-components/MagicSeed.svelte';
 	import NegativeCube from './NegativeCube.svelte';
 
 	import { isRainTriggered } from '../lib/rainStore.js';
@@ -14,7 +14,7 @@
 	let oldMagicSeedWasClicked = false;
 
 	// GROWTH TRIGGERING LOGIC
-	let isFirstBranchGrowing = false;
+	let isFirstBranchGrowing = true;
 	let rainCounter = 0;
 	let rainInterval;
 	let rainTriggeringStartTimestamp = null;
@@ -35,8 +35,6 @@
 	});
 	
 	let isCloudAndRainHidden = false;
-
-	
 
 	isRainTriggered.subscribe((value) => {
 		if (value) {

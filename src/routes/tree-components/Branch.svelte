@@ -2,7 +2,7 @@
 	import { onDestroy } from 'svelte';
 	import MagicSeed from './MagicSeed.svelte';
 	import { createEventDispatcher } from 'svelte';
-    import { magicSeedPositionWritable } from '../lib/magicSeedPositionStore.js';
+    import { magicSeedPositionWritable } from '../../lib/magicSeedPositionStore.js';
 
 	export let zIndex;
 	export let width;

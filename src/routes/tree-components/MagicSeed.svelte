@@ -1,5 +1,5 @@
 <script>
-	import { vigenereEncode, getRandomOneOrTwoLetters, addSpacesBetweenLetters } from '../lib/helpers/crypto.js';
+	import { vigenereEncode, getRandomOneOrTwoLetters, addSpacesBetweenLetters } from '../../lib/helpers/crypto.js';
     import { onMount } from 'svelte';
 
 	export let growing = false;
