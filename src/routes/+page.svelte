@@ -3,11 +3,11 @@
 	import '../css/global.css';
 	import '../css/fonts.css';
 	import Level1 from './Level1.svelte';
-	import Ripple from './Ripple.svelte';
-	import FlippableCard from './FlippableCard.svelte';
+	import Ripple from './old-components/Ripple.svelte';
+	import FlippableCard from './old-components/FlippableCard.svelte';
 	import { startRipples, stopRipples, updateMousePosition } from '../lib/rippleStore.js';
-	import MatterWorld from './MatterWorld.svelte';
-	import ThreeWorld from './ThreeWorld.svelte';
+	import MatterWorld from './old-components/MatterWorld.svelte';
+	import ThreeWorld from './old-components/ThreeWorld.svelte';
 	import NegativeCube from './NegativeCube.svelte';
 </script>
 

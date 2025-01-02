@@ -34,6 +34,8 @@
 
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.target.set(10, -2.5, -2);
+        controls.rotateSpeed = 0.2;
+        controls.panSpeed = 0.5;
         controls.update();
 
         const pointLight = new PointLight(0xffffff, 1, 100);
@@ -127,6 +129,7 @@
         left:0%;
         position: absolute;
         visibility: hidden;
+        z-index: -1; 
     }
 
     .isVisible {

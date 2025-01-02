@@ -123,7 +123,7 @@
 			transform: rotate(var(--rotation));
 		}
 		50% {
-			transform: rotate(calc(var(--rotation) + 0.75deg)); /* Subtle adjustment */
+			transform: rotate(calc(var(--rotation) + 2.0deg)); /* Subtle adjustment */
 		}
 		100% {
 			transform: rotate(var(--rotation));
