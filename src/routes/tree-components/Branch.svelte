@@ -80,7 +80,6 @@
 		--branchLength: {length};
 		--rotation: {rotation};
 		"
-   		on:pointerOverCubeScene={startSway}
 		on:pointerover={startSway}
 		on:pointerleave={stopSway}
 		on:touchstart={startSway} on:touchend={stopSway}

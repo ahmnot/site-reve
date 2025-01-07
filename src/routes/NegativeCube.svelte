@@ -7,13 +7,6 @@
 
     export let isVisible = false;
 
-    /** Sert à transférer les mouvements de souris aux branches en dessous */
-    const dispatch = createEventDispatcher();
-
-    function handlePointerMove(event) {
-        dispatch('pointerOverCubeScene', { x: event.clientX, y: event.clientY });
-    }
-
     let container;
 
     import iridescentCubeVS from '../lib/shaders/iridescentCubeVS.glsl';
@@ -137,4 +130,4 @@
     }
 </style>
 
-<div bind:this={container} on:pointermove={handlePointerMove} class:isVisible></div>
+<div bind:this={container} class:isVisible></div>

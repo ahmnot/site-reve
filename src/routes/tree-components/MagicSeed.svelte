@@ -146,7 +146,7 @@ style="
 
 	.magic-seed.blooming {
 		height: calc(var(--betterViewerHeight) * 100);
-		width: 50vw; 
+		width: 50dvw; 
 		left: var(--leftOffset);
 		bottom: var(--bottomOffset) !important;
 		transition:
@@ -169,7 +169,7 @@ style="
 
 	.mystical-alpha {
 		font-family: 'MysticalAlpha';
-		font-size: 2em;
+		font-size: 1.6em;
 	}
 
 	.slant {

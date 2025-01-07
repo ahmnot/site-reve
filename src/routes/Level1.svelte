@@ -14,7 +14,7 @@
 	let oldMagicSeedWasClicked = false;
 
 	// GROWTH TRIGGERING LOGIC
-	let isFirstBranchGrowing = true;
+	let isFirstBranchGrowing = false;
 	let rainCounter = 0;
 	let rainInterval;
 	let rainTriggeringStartTimestamp = null;
@@ -388,8 +388,8 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		width: 100vw;
-		height: 100vh;
+		width: 100dvw;
+		height: 100dvh;
 	}
 
 	.central {
@@ -402,10 +402,10 @@
 	}
 
 	.central.expanded {
-		width: calc(100vh * var(--aspect-ratio));
-		height: 100vh;
+		width: calc(100dvh * var(--aspect-ratio));
+		height: 100dvh;
 		background-color: azure;
-		max-width: 100vw;
-		max-height: 100vh;
+		max-width: 100dvw;
+		max-height: 100dvh;
 	}
 </style>
