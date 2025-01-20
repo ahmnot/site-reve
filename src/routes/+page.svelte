@@ -8,7 +8,7 @@
 	import { startRipples, stopRipples, updateMousePosition } from '../lib/rippleStore.js';
 	import MatterWorld from './old-components/MatterWorld.svelte';
 	import ThreeWorld from './old-components/ThreeWorld.svelte';
-	import NegativeCube from './NegativeCube.svelte';
+	import NegativeCube3DScene from './NegativeCube3DScene.svelte';
 </script>
 
 <Level1 />
@@ -25,7 +25,7 @@
         </div>
         <div></div>
         <div class="negative-div">
-            <NegativeCube />
+            <NegativeCube3DScene />
         </div>
         <div></div>
         <div>

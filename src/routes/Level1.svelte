@@ -4,7 +4,7 @@
 	import Rain from './nuage-components/Rain.svelte';
 	import Nuage from './nuage-components/Nuage.svelte';
 	import MagicSeed from './tree-components/MagicSeed.svelte';
-	import NegativeCube from './NegativeCube.svelte';
+	import NegativeCube3DScene from './NegativeCube3DScene.svelte';
 
 	import { isRainTriggered } from '../lib/rainStore.js';
 	import { isMagicSeedBloomTriggered, magicSeedBloomLeftOffset, magicSeedBloomBottomOffset } from '../lib/magicSeedBloomStore.js';
@@ -373,7 +373,7 @@
 			/>
 			<MagicSeed slot="magicSeedSlot" growing="true" rotation="0" parentLength="0" {blooming} {leftOffset} {bottomOffset}></MagicSeed>
 		
-			<NegativeCube slot="negativeCubeSlot" isVisible={showNegativeCube} />
+			<NegativeCube3DScene slot="negativeCubeSlot" isVisible={showNegativeCube} />
 		</BoxWithAWordWithNuageTarget>
 	</div>
 </div>
