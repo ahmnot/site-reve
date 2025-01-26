@@ -18,15 +18,26 @@
 	import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 	import { Group } from 'three';
 
-	export let isVisible = false;
-
-	let container;
+	import { Confetti } from 'svelte-confetti';
 
 	// Shaders existants
 	import iridescentCubeVS from '../lib/shaders/iridescentCubeVS.glsl';
 	import iridescentCubeFS from '../lib/shaders/iridescentCubeFS.glsl';
 	import simpleCubeVS from '../lib/shaders/simpleCubeVS.glsl';
 	import simpleCubeFS from '../lib/shaders/simpleCubeFS.glsl';
+
+	export let isVisible = false;
+
+	let container;
+
+	let confettiVisible = false;
+
+	function triggerConfetti() {
+		confettiVisible = true; // Montrer le composant Confetti
+		setTimeout(() => {
+			confettiVisible = false; // Cacher le composant Confetti après 3 secondes
+		}, 3000);
+	}
 
 	onMount(async () => {
 		// 1. Créer la scène et la caméra
@@ -47,7 +58,7 @@
 
 		// 3. (Optionnel) OrbitControls
 		const controls = new OrbitControls(camera, renderer.domElement);
-		controls.enableRotate = false; 
+		controls.enableRotate = false;
 		controls.enablePan = false;
 		controls.enableZoom = true;
 		controls.target.set(4, 0, 0);
@@ -86,6 +97,38 @@
 		const iridescentCube = new Mesh(iridescentCubeGeometry, iridescentCubeMaterial);
 		orbitGroup.add(iridescentCube);
 
+		function checkCubeMatch() {
+			// Marge de tolérance pour la position et la rotation
+			const positionTolerance = 0.1; // Tolérance pour les positions
+			const rotationTolerance = 0.1; // Tolérance pour les rotations (en radians)
+
+			// Calcul de positionMatch
+			const positionMatch =
+				Math.abs(rootGroup.position.x - linedCube.position.x) < positionTolerance &&
+				Math.abs(rootGroup.position.y - linedCube.position.y) < positionTolerance &&
+				Math.abs(rootGroup.position.z - linedCube.position.z) < positionTolerance;
+
+			// Calcul de rotationMatch
+			const rotationMatch =
+				Math.abs(Math.abs(rootGroup.rotation.x) - Math.abs(linedCube.rotation.x)) <
+					rotationTolerance &&
+				Math.abs(Math.abs(rootGroup.rotation.y) - Math.abs(linedCube.rotation.y)) <
+					rotationTolerance &&
+				Math.abs(Math.abs(rootGroup.rotation.z) - Math.abs(linedCube.rotation.z)) <
+					rotationTolerance;
+
+
+			// Vérification du match
+			if (positionMatch && rotationMatch) {
+				console.log('>>> Match detected! Triggering confetti...');
+				if (!confettiVisible) {
+					confettiVisible = true;
+					triggerConfetti();
+				}
+			}
+
+		}
+
 		// 7. Petit cube qui représente la lampe
 		const lampCubeGeometry = new BoxGeometry(0.2, 0.2, 0.2);
 		const lampCubeMaterial = new ShaderMaterial({
@@ -116,65 +159,75 @@
 
 		// c) Crée un matériau "LineDashedMaterial" pour avoir un effet pointillé
 		const outlineMaterial = new LineDashedMaterial({
-			color: 0xd2b48c,  // noir
-			dashSize: 0.05,    // longueur de chaque tiret
-			gapSize: 0.15,     // espace entre tirets
-			linewidth: 1      // épaisseur (souvent ignoré selon la plateforme)
+			color: 0xD3D3D3,
+			dashSize: 0.05, // longueur de chaque tiret
+			gapSize: 0.15, // espace entre tirets
+			linewidth: 1, // épaisseur (souvent ignoré selon la plateforme)
+			transparent: true, // Permet la transparence
+			opacity: 1.0 // Valeur initiale de l'opacité
 		});
 
 		// d) On crée le LineSegments qui va porter ces arêtes
-		const staticCube1 = new LineSegments(edgesGeometry, outlineMaterial);
+		const linedCube = new LineSegments(edgesGeometry, outlineMaterial);
 
 		// e) Nécessaire pour activer le pattern "dashed"
-		staticCube1.computeLineDistances();
+		linedCube.computeLineDistances();
 
 		// f) Position "en bas à gauche" (ou gauche, selon tes coordonnées)
-		staticCube1.position.set(10, -5, 0);
+		linedCube.position.set(10, -5, 0);
 
 		// g) Appliquer une rotation statique
-		staticCube1.rotation.x = Math.PI / 4; 
-		staticCube1.rotation.z = Math.PI / 4; 
+		linedCube.rotation.x = Math.PI / 4;
+		linedCube.rotation.y = Math.PI / 4;
 
 		// h) On l'ajoute directement à la scène pour qu'il reste statique
-		scene.add(staticCube1);
+		scene.add(linedCube);
 
 		// 9. Clock pour l'animation (uniquement pour les objets qui bougent)
 		const clock = new Clock();
 
 		// 10. Boucle d'animation
+		// Animation de l'opacité pour le linedCube
+		const pulseSpeed = 2; // Vitesse de la pulsation
+		const minOpacity = 0.1; // Opacité minimale (transparence)
+		const maxOpacity = 0.8; // Opacité maximale (gris clair)
+		const orbitRadius = 1.0;
+
+
 		function animate() {
 			requestAnimationFrame(animate);
 
 			const elapsedTime = clock.getElapsedTime();
 
 			// --- Mouvement du lampCube autour du cube iridescent ---
-			const orbitRadius = 1.0;
 			const angle = elapsedTime;
+
+			// Animation de la pulsation
+			const pulseOpacity = (Math.sin(elapsedTime * pulseSpeed) * 0.5 + 0.5) * (maxOpacity - minOpacity) + minOpacity;
+
+			outlineMaterial.opacity = pulseOpacity; // Mise à jour de l'opacité
+
+			// Autres animations
 			lampCube.position.set(
-				Math.sin(angle) * orbitRadius,
-				Math.sin(angle) * Math.cos(angle) * 1.5,
-				Math.cos(angle) * orbitRadius
+				Math.sin(elapsedTime) * orbitRadius,
+				Math.sin(elapsedTime) * Math.cos(elapsedTime) * 1.5,
+				Math.cos(elapsedTime) * orbitRadius
 			);
 
-			// Mise à jour de la position de la lumière
-			const worldPosition = new Vector3();
-			lampCube.getWorldPosition(worldPosition);
-			pointLight.position.copy(worldPosition);
+			pointLight.position.copy(lampCube.position);
 
-			// Mise à jour de la position de la lumière pour le shader iridescent
-			iridescentCubeMaterial.uniforms.lightPosition.value.copy(worldPosition);
+			iridescentCubeMaterial.uniforms.lightPosition.value.copy(lampCube.position);
 
-			// Mise à jour couleur "iridescente"
 			iridescentCubeMaterial.uniforms.varyingColor.value.set(
 				Math.sin(elapsedTime * 3.5) * 0.5 + 0.5,
 				Math.sin(elapsedTime * 1.5) * 0.5 + 0.5,
 				Math.sin(elapsedTime * 2.5) * 0.5 + 0.5
 			);
 
-			// Le nouveau cube (staticCube1) n'est pas animé
+			checkCubeMatch();
 
 			renderer.render(scene, camera);
-		}
+	}
 		animate();
 
 		// 11. Logique pour panning/rotation (click gauche/droit)
@@ -206,8 +259,7 @@
 				rootGroup.position.y -= deltaY * 0.015;
 				lastX = event.clientX;
 				lastY = event.clientY;
-			} 
-			else if (isRotating) {
+			} else if (isRotating) {
 				const deltaX = event.clientX - lastX;
 				const deltaY = event.clientY - lastY;
 				rootGroup.rotation.y += deltaX * 0.005;
@@ -240,6 +292,29 @@
 </script>
 
 <div bind:this={container} class:isVisible></div>
+{#if confettiVisible}
+	<span
+		style="
+		position: fixed;
+		top: -50px;
+		left: 0;
+		height: 100vh;
+		width: 100vw;
+		display: flex;
+		justify-content: center;
+		overflow: hidden;
+		pointer-events: none;"
+	>
+		<Confetti
+			x={[-5, 5]}
+			y={[0, 0.1]}
+			infinite
+			duration="5000"
+			amount="200"
+			fallDistance="100vh"
+		/>
+	</span>
+{/if}
 
 <style>
 	div {
