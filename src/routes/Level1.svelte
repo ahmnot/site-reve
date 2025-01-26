@@ -14,7 +14,7 @@
 	let oldMagicSeedWasClicked = false;
 
 	// GROWTH TRIGGERING LOGIC
-	let isFirstBranchGrowing = true;
+	let isFirstBranchGrowing = false;
 	let rainCounter = 0;
 	let rainInterval;
 	let rainTriggeringStartTimestamp = null;
@@ -339,7 +339,7 @@
 
 	$: treeGroundPosition = innerHeight *0.8;
 
-	let showNegativeCube = true;
+	let showNegativeCube = false;
 
 	$: if ($isMagicSeedBloomTriggered) {
 		// Delay showing the NegativeCube component

@@ -117,10 +117,8 @@
 				Math.abs(Math.abs(rootGroup.rotation.z) - Math.abs(linedCube.rotation.z)) <
 					rotationTolerance;
 
-
 			// Vérification du match
 			if (positionMatch && rotationMatch) {
-				console.log('>>> Match detected! Triggering confetti...');
 				if (!confettiVisible) {
 					confettiVisible = true;
 					triggerConfetti();
@@ -161,7 +159,7 @@
 		const outlineMaterial = new LineDashedMaterial({
 			color: 0xD3D3D3,
 			dashSize: 0.05, // longueur de chaque tiret
-			gapSize: 0.15, // espace entre tirets
+			gapSize: 0.2, // espace entre tirets
 			linewidth: 1, // épaisseur (souvent ignoré selon la plateforme)
 			transparent: true, // Permet la transparence
 			opacity: 1.0 // Valeur initiale de l'opacité
@@ -192,7 +190,6 @@
 		const minOpacity = 0.1; // Opacité minimale (transparence)
 		const maxOpacity = 0.8; // Opacité maximale (gris clair)
 		const orbitRadius = 1.0;
-
 
 		function animate() {
 			requestAnimationFrame(animate);
@@ -227,7 +224,7 @@
 			checkCubeMatch();
 
 			renderer.render(scene, camera);
-	}
+		}
 		animate();
 
 		// 11. Logique pour panning/rotation (click gauche/droit)
@@ -311,7 +308,7 @@
 			infinite
 			duration="5000"
 			amount="200"
-			fallDistance="100vh"
+			fallDistance="200vh"
 		/>
 	</span>
 {/if}
