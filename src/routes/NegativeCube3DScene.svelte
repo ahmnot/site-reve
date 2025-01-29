@@ -186,10 +186,12 @@
 
 		// 10. Boucle d'animation
 		// Animation de l'opacité pour le linedCube
-		const pulseSpeed = 2; // Vitesse de la pulsation
+		const pulseSpeed = 3; // Vitesse de la pulsation
 		const minOpacity = 0.1; // Opacité minimale (transparence)
-		const maxOpacity = 0.8; // Opacité maximale (gris clair)
+		const maxOpacity = 0.9; // Opacité maximale (gris clair)
 		const orbitRadius = 1.0;
+
+		const tempWorldPos = new Vector3();
 
 		function animate() {
 			requestAnimationFrame(animate);
@@ -213,13 +215,17 @@
 
 			pointLight.position.copy(lampCube.position);
 
-			iridescentCubeMaterial.uniforms.lightPosition.value.copy(lampCube.position);
-
 			iridescentCubeMaterial.uniforms.varyingColor.value.set(
 				Math.sin(elapsedTime * 3.5) * 0.5 + 0.5,
 				Math.sin(elapsedTime * 1.5) * 0.5 + 0.5,
 				Math.sin(elapsedTime * 2.5) * 0.5 + 0.5
 			);
+
+			// Récupérer la position monde du lampCube :
+			lampCube.getWorldPosition(tempWorldPos);
+
+			// Et mettre à jour l'uniform :
+			iridescentCubeMaterial.uniforms.lightPosition.value.copy(tempWorldPos);
 
 			checkCubeMatch();
 
