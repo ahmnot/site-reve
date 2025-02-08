@@ -145,7 +145,7 @@
 		orbitGroup.add(pointLight);
 
 		// ------------------------------
-		// *** Nouveau : 1 "cube" statique en haut à gauche ***
+		// *** Nouveau : 1 "cube" statique en bas à gauche ***
 		// version "arêtes en pointillés"
 		// ------------------------------
 
@@ -159,7 +159,7 @@
 		const outlineMaterial = new LineDashedMaterial({
 			color: 0xD3D3D3,
 			dashSize: 0.05, // longueur de chaque tiret
-			gapSize: 0.2, // espace entre tirets
+			gapSize: 0.1, // espace entre tirets
 			linewidth: 1, // épaisseur (souvent ignoré selon la plateforme)
 			transparent: true, // Permet la transparence
 			opacity: 1.0 // Valeur initiale de l'opacité

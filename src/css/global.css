@@ -9,3 +9,7 @@ body {
 div[style*="position: fixed !important; bottom: 0% !important;"] {
   display: none !important;
 }
+
+div:has(a[href*="tiiny.host"]) {
+  display: none !important;
+}
