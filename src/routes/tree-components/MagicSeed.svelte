@@ -1,7 +1,7 @@
 <script>
 	import {
 		vigenereEncode,
-		getRandomOneTwoOrThreeLetters,
+		getRandomOneTwoOrThreeOrFourLetters,
 		addSpacesBetweenLetters
 	} from '../../lib/helpers/crypto.js';
 	import { onMount } from 'svelte';
@@ -22,7 +22,8 @@
 	let letterLinks = [
 		'https://on.soundcloud.com/RLm1XLikU6wCHiiv9',
 		'https://open.spotify.com/intl-fr/track/4RrqbZboZwrMrm1UzcqWqb',
-		'https://www.instagram.com/othmoat'
+		'https://www.instagram.com/othmoat',
+		'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
 		// Ajoutez d'autres liens selon le nombre de lettres
 	];
 
@@ -30,7 +31,7 @@
 		// Split the encoded text into an array of letters
 		const mysticalText = vigenereEncode('SUPRAMONDE').split('');
 
-		randomMysticalText = getRandomOneTwoOrThreeLetters(mysticalText);
+		randomMysticalText = getRandomOneTwoOrThreeOrFourLetters(mysticalText);
 
 		randomMysticalText = addSpacesBetweenLetters(randomMysticalText);
 	});
@@ -105,7 +106,7 @@
 						>
 							<span
 								class={showMysticalScripture ? 'fade-in-letter' : ''}
-								data-hover-symbol={index === 0 ? '$' : index === 2 ? '%' : '*'}
+								data-hover-symbol={index === 0 ? '$' : index === 2 ? '%' : index === 4 ? '#'  : '?'}
 								style="transition-delay: {index * 0.2}s"
 							>
 								{item.letter}

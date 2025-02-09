@@ -44,21 +44,25 @@ const decodedText = vigenereDecode(encodedText, keyword);
 
 
 // Function to randomly choose one, two, or three consecutive letters
-export function getRandomOneTwoOrThreeLetters(textArray) {
+export function getRandomOneTwoOrThreeOrFourLetters(textArray) {
   const length = textArray.length;
   const probability = 0; //Configured to 3 letters but can change !!!
   let selectedLetters = [];
 
-  if (probability < 0.33 && length > 2) {
-    // 33% chance to show 3 letters
+  if (probability < 0.25 && length > 3) {
+    // 25% chance to show 3 letters
+    const startIndex = Math.floor(Math.random() * (length - 3));
+    selectedLetters = [textArray[startIndex], textArray[startIndex + 1], textArray[startIndex + 2], textArray[startIndex + 4]];
+  } else if (probability < 0.50 && length > 2) {
+    // 25% chance to show 3 letters
     const startIndex = Math.floor(Math.random() * (length - 2));
     selectedLetters = [textArray[startIndex], textArray[startIndex + 1], textArray[startIndex + 2]];
-  } else if (probability < 0.66 && length > 1) {
-    // 33% chance to show 2 letters
+  } else if (probability < 0.75 && length > 1) {
+    // 25% chance to show 2 letters
     const startIndex = Math.floor(Math.random() * (length - 1));
     selectedLetters = [textArray[startIndex], textArray[startIndex + 1]];
   } else {
-    // 34% chance to show 1 letter
+    // 25% chance to show 1 letter
     const index = Math.floor(Math.random() * length);
     selectedLetters = [textArray[index]];
   }
