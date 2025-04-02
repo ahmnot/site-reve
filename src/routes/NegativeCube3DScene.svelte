@@ -18,7 +18,7 @@
 	import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 	import { Group } from 'three';
 
-	import { Confetti } from 'svelte-confetti';
+	import TextInput from './TextInput.svelte';
 
 	// Shaders existants
 	import iridescentCubeVS from '../lib/shaders/iridescentCubeVS.glsl';
@@ -34,9 +34,6 @@
 
 	function triggerConfetti() {
 		confettiVisible = true; // Montrer le composant Confetti
-		setTimeout(() => {
-			confettiVisible = false; // Cacher le composant Confetti après 3 secondes
-		}, 3000);
 	}
 
 	onMount(async () => {
@@ -295,28 +292,9 @@
 </script>
 
 <div bind:this={container} class:isVisible></div>
+
 {#if confettiVisible}
-	<span
-		style="
-		position: fixed;
-		top: -50px;
-		left: 0;
-		height: 100vh;
-		width: 100vw;
-		display: flex;
-		justify-content: center;
-		overflow: hidden;
-		pointer-events: none;"
-	>
-		<Confetti
-			x={[-5, 5]}
-			y={[0, 0.1]}
-			infinite
-			duration="5000"
-			amount="200"
-			fallDistance="200vh"
-		/>
-	</span>
+	<TextInput on:submit={(e) => console.log('Texte validé :', e.detail.value)} />
 {/if}
 
 <style>
