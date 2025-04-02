@@ -10,7 +10,7 @@
 	import { isMagicSeedBloomTriggered, magicSeedBloomLeftOffset, magicSeedBloomBottomOffset } from '../lib/magicSeedBloomStore.js';
 
 	let expanded = true;
-	let isFirstClick = true;
+	let isFirstClick = false;
 	let oldMagicSeedWasClicked = false;
 
 	// GROWTH TRIGGERING LOGIC

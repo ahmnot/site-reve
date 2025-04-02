@@ -1,8 +1,8 @@
 <script>
-	import { onDestroy } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import MagicSeed from './MagicSeed.svelte';
 	import { createEventDispatcher } from 'svelte';
-    import { magicSeedPositionWritable } from '../../lib/magicSeedPositionStore.js';
+	import { magicSeedPositionWritable } from '../../lib/magicSeedPositionStore.js';
 
 	export let zIndex;
 	export let width;
@@ -15,7 +15,9 @@
 	export let magicseed = false;
 	export let parentLength = 0;
 	export let windy = true;
-    export let swayOnHover = false; // New prop
+	export let swayOnHover = false; // New prop
+
+	let audioSway;
 
 	let swaying = false;
 
@@ -32,7 +34,6 @@
 	}
 
 	function handleBranchMagicSeedClick() {
-
 		const branchMagicSeedElement = document.querySelector('#branchMagicSeed');
 
 		const rect = branchMagicSeedElement.getBoundingClientRect();
@@ -45,9 +46,11 @@
 		branchMagicSeedElement.remove();
 	}
 
-
 	function startSway() {
 		if (swayOnHover) {
+			// Réinitialise le temps du son pour le rejouer à chaque survol
+			// audioSway.currentTime = 0;
+			// audioSway.play();
 			swaying = true;
 		}
 	}
@@ -57,11 +60,20 @@
 			swaying = false;
 		}, 500);
 	}
+
+	// Utilisez onMount pour créer l'objet Audio uniquement côté client
+	onMount(() => {
+		// audioSway = new Audio('/sounds/bite.wav');
+	});
 </script>
 
 {#if magicseed}
-	<div id="branchMagicSeed" on:click={handleBranchMagicSeedClick} on:touchstart={handleBranchMagicSeedClick}>
-		<MagicSeed {parentLength} {rotation} {growing}  />
+	<div
+		id="branchMagicSeed"
+		on:click={handleBranchMagicSeedClick}
+		on:touchstart={handleBranchMagicSeedClick}
+	>
+		<MagicSeed {parentLength} {rotation} {growing} />
 	</div>
 {:else}
 	<div
@@ -82,7 +94,8 @@
 		"
 		on:pointerover={startSway}
 		on:pointerleave={stopSway}
-		on:touchstart={startSway} on:touchend={stopSway}
+		on:touchstart={startSway}
+		on:touchend={stopSway}
 	>
 		{#each childBranches as branch (branch.id)}
 			<svelte:self
@@ -98,7 +111,7 @@
 				windy={branch.windy}
 				parentLength={length}
 				on:branchMagicSeedWasClicked
-                swayOnHover={branch.swayOnHover}
+				swayOnHover={branch.swayOnHover}
 			/>
 		{/each}
 	</div>
@@ -122,7 +135,7 @@
 			transform: rotate(var(--rotation));
 		}
 		50% {
-			transform: rotate(calc(var(--rotation) + 2.0deg)); /* Subtle adjustment */
+			transform: rotate(calc(var(--rotation) + 2deg)); /* Subtle adjustment */
 		}
 		100% {
 			transform: rotate(var(--rotation));

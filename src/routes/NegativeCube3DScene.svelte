@@ -48,7 +48,7 @@
 			0.01,
 			100
 		);
-		camera.position.set(0, 0, -40); // Position de la caméra
+		camera.position.set(0, 0, -45); // Position de la caméra
 
 		// 2. Créer le renderer
 		const renderer = new WebGLRenderer({ antialias: true, alpha: true });
@@ -60,7 +60,7 @@
 		const controls = new OrbitControls(camera, renderer.domElement);
 		controls.enableRotate = false;
 		controls.enablePan = false;
-		controls.enableZoom = true;
+		controls.enableZoom = false;
 		controls.target.set(4, 0, 0);
 		controls.update();
 
@@ -158,8 +158,8 @@
 		// c) Crée un matériau "LineDashedMaterial" pour avoir un effet pointillé
 		const outlineMaterial = new LineDashedMaterial({
 			color: 0xD3D3D3,
-			dashSize: 0.05, // longueur de chaque tiret
-			gapSize: 0.1, // espace entre tirets
+			dashSize: 0.25, // longueur de chaque tiret
+			gapSize: 0.3, // espace entre tirets
 			linewidth: 1, // épaisseur (souvent ignoré selon la plateforme)
 			transparent: true, // Permet la transparence
 			opacity: 1.0 // Valeur initiale de l'opacité
