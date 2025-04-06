@@ -23,7 +23,7 @@
 		'https://on.soundcloud.com/RLm1XLikU6wCHiiv9',
 		'https://open.spotify.com/intl-fr/track/4RrqbZboZwrMrm1UzcqWqb',
 		'https://www.instagram.com/othmoat',
-		'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+		'https://www.youtube.com/watch?v=F2hLJroML_w'
 		// Ajoutez d'autres liens selon le nombre de lettres
 	];
 
@@ -234,7 +234,7 @@
 
 	.mystical-alpha {
 		font-family: 'MysticalAlpha';
-		font-size: 1.6em;
+		font-size: 1.7em;
 	}
 
 	.slant {

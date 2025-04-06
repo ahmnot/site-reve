@@ -120,8 +120,11 @@
 					confettiVisible = true;
 					triggerConfetti();
 				}
+			} else {
+				if (confettiVisible) {
+					confettiVisible = false;
+				}
 			}
-
 		}
 
 		// 7. Petit cube qui représente la lampe
@@ -154,9 +157,9 @@
 
 		// c) Crée un matériau "LineDashedMaterial" pour avoir un effet pointillé
 		const outlineMaterial = new LineDashedMaterial({
-			color: 0xD3D3D3,
-			dashSize: 0.25, // longueur de chaque tiret
-			gapSize: 0.3, // espace entre tirets
+			color: 0xd3d3d3,
+			dashSize: 0.15, // longueur de chaque tiret
+			gapSize: 0.25, // espace entre tirets
 			linewidth: 1, // épaisseur (souvent ignoré selon la plateforme)
 			transparent: true, // Permet la transparence
 			opacity: 1.0 // Valeur initiale de l'opacité
@@ -199,7 +202,8 @@
 			const angle = elapsedTime;
 
 			// Animation de la pulsation
-			const pulseOpacity = (Math.sin(elapsedTime * pulseSpeed) * 0.5 + 0.5) * (maxOpacity - minOpacity) + minOpacity;
+			const pulseOpacity =
+				(Math.sin(elapsedTime * pulseSpeed) * 0.5 + 0.5) * (maxOpacity - minOpacity) + minOpacity;
 
 			outlineMaterial.opacity = pulseOpacity; // Mise à jour de l'opacité
 
