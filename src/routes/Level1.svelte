@@ -8,7 +8,11 @@
 	import NegativeCube3DScene from './NegativeCube3DScene.svelte';
 
 	import { isRainTriggered } from '../lib/rainStore.js';
-	import { isMagicSeedBloomTriggered, magicSeedBloomLeftOffset, magicSeedBloomBottomOffset } from '../lib/magicSeedBloomStore.js';
+	import {
+		isMagicSeedBloomTriggered,
+		magicSeedBloomLeftOffset,
+		magicSeedBloomBottomOffset
+	} from '../lib/magicSeedBloomStore.js';
 
 	// Import du store pour la génération des branches
 	import { generateBranches, resetBranchGeneration } from '../lib/branchesStore.js';
@@ -37,7 +41,7 @@
 	magicSeedBloomBottomOffset.subscribe((value) => {
 		bottomOffset = value;
 	});
-	
+
 	let isCloudAndRainHidden = false;
 
 	isRainTriggered.subscribe((value) => {
@@ -84,7 +88,7 @@
 		initialBranchWidth = innerHeight / 33;
 		initialBranchLength = initialBranchWidth;
 		magicSeedBranchPosition = (2 * trunkNumberOfBranches) / 3 - 2;
-		
+
 		allTheBranches = generateBranches({
 			numberOfBranches: trunkNumberOfBranches,
 			depth: initialDepth,
@@ -169,7 +173,12 @@
 
 <div class="outer-container">
 	<div class="central" class:expanded>
-		<BoxWithAWordWithNuageTarget {expanded} {toggleExpanded} {oldMagicSeedWasClicked} {isCloudAndRainHidden}>
+		<BoxWithAWordWithNuageTarget
+			{expanded}
+			{toggleExpanded}
+			{oldMagicSeedWasClicked}
+			{isCloudAndRainHidden}
+		>
 			<Nuage slot="nuageSlot" />
 			<Rain
 				slot="appearsWhenBoxInNuage"
@@ -187,7 +196,15 @@
 				{allTheBranches}
 				on:branchMagicSeedWasClicked={handleMagicSeedClick}
 			/>
-			<MagicSeed slot="magicSeedSlot" growing="true" rotation="0" parentLength="0" {blooming} {leftOffset} {bottomOffset} />
+			<MagicSeed
+				slot="magicSeedSlot"
+				growing="true"
+				rotation="0"
+				parentLength="0"
+				{blooming}
+				{leftOffset}
+				{bottomOffset}
+			/>
 			<NegativeCube3DScene slot="negativeCubeSlot" isVisible={showNegativeCube} />
 		</BoxWithAWordWithNuageTarget>
 	</div>
