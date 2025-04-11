@@ -1,4 +1,5 @@
 <script>
+	// Tree.svelte
 	import Branch from './Branch.svelte';
 
 	export let treeGround = '0';

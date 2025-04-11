@@ -1,4 +1,5 @@
 <script>
+	// Branch.svelte
 	import { onMount, onDestroy } from 'svelte';
 	import MagicSeed from './MagicSeed.svelte';
 	import { createEventDispatcher } from 'svelte';

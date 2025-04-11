@@ -1,4 +1,4 @@
-// src/stores/rainStore.js
+// rainStore.js
 import { writable } from 'svelte/store';
 
 export const isRainTriggered = writable(false);

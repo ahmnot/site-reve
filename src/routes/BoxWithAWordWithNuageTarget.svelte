@@ -1,4 +1,5 @@
 <script>
+	// BoxWithAWordWithNuageTarget.svelte
 	import { onMount } from 'svelte';
 	import { magicSeedPositionWritable } from '../lib/magicSeedPositionStore.js';
 	import { isRainTriggered } from '../lib/rainStore.js';

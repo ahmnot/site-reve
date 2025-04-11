@@ -1,4 +1,5 @@
 <script>
+	// MagicSeed.svelte
 	import {
 		vigenereEncode,
 		getRandomOneTwoOrThreeOrFourLetters,
@@ -23,7 +24,7 @@
 		'https://on.soundcloud.com/RLm1XLikU6wCHiiv9',
 		'https://open.spotify.com/intl-fr/track/4RrqbZboZwrMrm1UzcqWqb',
 		'https://www.instagram.com/othmoat',
-		'https://www.youtube.com/watch?v=F2hLJroML_w'
+		'https://www.youtube.com/shorts/s7QFSQpq_Ko'
 		// Ajoutez d'autres liens selon le nombre de lettres
 	];
 

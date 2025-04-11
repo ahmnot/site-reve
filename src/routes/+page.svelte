@@ -3,6 +3,7 @@
 	import '../css/global.css';
 	import '../css/fonts.css';
 	import Level1 from './Level1.svelte';
+	import Level2 from './Level2.svelte';
 	import Ripple from './old-components/Ripple.svelte';
 	import FlippableCard from './old-components/FlippableCard.svelte';
 	import { startRipples, stopRipples, updateMousePosition } from '../lib/rippleStore.js';
@@ -12,6 +13,7 @@
 </script>
 
 <Level1 />
+<!-- <Level2 /> -->
 
 <!-- <div class="outer-container">
     <div class="grid-container">

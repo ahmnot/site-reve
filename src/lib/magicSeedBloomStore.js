@@ -1,4 +1,4 @@
-// src/stores/rainStore.js
+// magicSeedBloomStore.js
 import { writable } from 'svelte/store';
 
 export const isMagicSeedBloomTriggered = writable(false);
