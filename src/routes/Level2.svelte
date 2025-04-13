@@ -1,4 +1,5 @@
 <script>
+	//Level2.svelte
 	import Tree from './tree-components/Tree.svelte';
 
 	// GROWTH TRIGGERING LOGIC
@@ -17,13 +18,13 @@
 <svelte:window bind:innerHeight />
 
 <div class="outer-container">
-	<Tree
+	<!-- <Tree
 		leftPosition="50%"
 		treeGround="{treeGroundPosition}px"
 		{isFirstBranchGrowing}
 		{allTheBranches}
 		on:branchMagicSeedWasClicked={handleMagicSeedClick}
-	/>
+	/> -->
 </div>
 
 

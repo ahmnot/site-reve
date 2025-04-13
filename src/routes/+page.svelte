@@ -1,4 +1,5 @@
 <script>
+	//+page.svelte
 	import { onMount } from 'svelte';
 	import '../css/global.css';
 	import '../css/fonts.css';
@@ -10,10 +11,43 @@
 	import MatterWorld from './old-components/MatterWorld.svelte';
 	import ThreeWorld from './old-components/ThreeWorld.svelte';
 	import NegativeCube3DScene from './NegativeCube3DScene.svelte';
+	import { tweened } from 'svelte/motion';
+	import { cubicOut } from 'svelte/easing';
+	// Indique si Level2 est actuellement affiché (en vue)
+	let isShowingLevel2 = false;
+
+	// La valeur de translation verticale (en pixels)
+	// On part de 0 (affichage de Level1)
+	const offsetY = tweened(0, { duration: 800, easing: cubicOut });
+
+	// Fonction toggle pour alterner entre Level1 et Level2
+	function toggleLevels() {
+		if (isShowingLevel2) {
+			offsetY.set(0);
+		} else {
+			offsetY.set(-window.innerHeight);
+		}
+		isShowingLevel2 = !isShowingLevel2;
+	}
 </script>
 
-<Level1 />
-<!-- <Level2 /> -->
+<!-- Conteneur "viewport" qui masque le débordement -->
+<div class="viewport">
+	<!-- Conteneur avec la hauteur des deux niveaux, positionné via transform -->
+	<div class="levels" style="transform: translateY({$offsetY}px);">
+		<div class="level">
+			<Level1 />
+		</div>
+		<div class="level">
+			<Level2 />
+		</div>
+	</div>
+</div>
+
+<!-- Bouton de déclenchement (à remplacer par l'action spécifique quand tu l'auras définie) -->
+<button on:click={toggleLevels}>
+	{isShowingLevel2 ? 'Retour Level1' : 'Activer Level2'}
+</button>
 
 <!-- <div class="outer-container">
     <div class="grid-container">
@@ -47,50 +81,77 @@
 </div> -->
 
 <style>
-    .top-left-div {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        backface-visibility: hidden;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5em;
-    }
+	/* Le conteneur viewport prend toute la hauteur de la fenêtre et masque le débordement */
+	.viewport {
+		height: 100vh;
+		overflow: hidden;
+		position: relative;
+	}
+	/* Le conteneur des niveaux a une hauteur de 200vh (deux fois la hauteur du viewport) */
+	.levels {
+		height: 200vh;
+		width: 100%;
+		/* La propriété transform est contrôlée par la tweened store pour animer le scroll */
+	}
+	/* Chaque niveau occupe exactement la hauteur du viewport */
+	.level {
+		height: 100vh;
+		width: 100%;
+	}
+	/* Un style basique pour le bouton */
+	button {
+		position: fixed;
+		bottom: 20px;
+		left: 20px;
+		z-index: 10;
+		padding: 0.5em 1em;
+		font-size: 1rem;
+	}
 
-    .outer-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: 100vw;
-        height: 100vh;
-    }
+	.top-left-div {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		backface-visibility: hidden;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 1.5em;
+	}
 
-    .grid-container {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        grid-template-rows: repeat(3, 1fr);
-        width: 100vw;
-        height: 100vh;
-        max-width: calc(100vh * 9 / 16);
-        max-height: calc(100vw * 16 / 9);
-    }
+	.outer-container {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		width: 100vw;
+		height: 100vh;
+	}
 
-    .grid-container > div {
-        background-color: floralwhite;
-        position: relative; /* Needed for ripple effect */
-        overflow: hidden; /* Hide overflow for ripple effect */
-    }
+	.grid-container {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		grid-template-rows: repeat(3, 1fr);
+		width: 100vw;
+		height: 100vh;
+		max-width: calc(100vh * 9 / 16);
+		max-height: calc(100vw * 16 / 9);
+	}
 
-    .left-div {
-        grid-area: 2 / 1;
-        position: relative;
-        overflow: hidden;
-    }
+	.grid-container > div {
+		background-color: floralwhite;
+		position: relative; /* Needed for ripple effect */
+		overflow: hidden; /* Hide overflow for ripple effect */
+	}
 
-    .negative-div {
-        grid-area: 2 / 3;
-        position: relative;
-        overflow: hidden;
-    }
+	.left-div {
+		grid-area: 2 / 1;
+		position: relative;
+		overflow: hidden;
+	}
+
+	.negative-div {
+		grid-area: 2 / 3;
+		position: relative;
+		overflow: hidden;
+	}
 </style>

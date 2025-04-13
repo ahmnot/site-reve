@@ -45,7 +45,7 @@
 			0.01,
 			100
 		);
-		camera.position.set(0, 0, -45); // Position de la caméra
+		camera.position.set(0, 0, -95); // Position de la caméra
 
 		// 2. Créer le renderer
 		const renderer = new WebGLRenderer({ antialias: true, alpha: true });

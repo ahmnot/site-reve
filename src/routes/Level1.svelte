@@ -1,5 +1,5 @@
 <script>
-	// Importation des composants
+	// Level1.svelte
 	import Tree from './tree-components/Tree.svelte';
 	import BoxWithAWordWithNuageTarget from './BoxWithAWordWithNuageTarget.svelte';
 	import Rain from './nuage-components/Rain.svelte';
