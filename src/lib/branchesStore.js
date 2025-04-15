@@ -205,18 +205,18 @@ export function generateBranches(config) {
 
         parentBranch = childBranch;
 
-        if (i === numberOfBranches - 1 && !magicSeedCondition) {
-            childBranch.childBranches.push({
-                id: generateUniqueId(`${childBranch.id}-leaf`),
-                zIndex: 100,
-                width: '10px',
-                length: '12px',
-                rotation: `-90deg`,
-                color: Math.random() < 0.5 ? 'thistle' : 'mistyrose',
-                windIntensity: '10px',
-                childBranches: []
-            });
-        }
+        // if (i === numberOfBranches - 1 && !magicSeedCondition) {
+        //     childBranch.childBranches.push({
+        //         id: generateUniqueId(`${childBranch.id}-leaf`),
+        //         zIndex: 100,
+        //         width: '10px',
+        //         length: '12px',
+        //         rotation: `-90deg`,
+        //         color: Math.random() < 0.5 ? 'thistle' : 'mistyrose',
+        //         windIntensity: '10px',
+        //         childBranches: []
+        //     });
+        // }
     }
 
     return finalBranches;
