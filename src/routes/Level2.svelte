@@ -1,6 +1,7 @@
 <script>
 	import Tree from './tree-components/Tree.svelte';
 	import { generateBranches } from '../lib/branchesStore.js';
+	import Worm from './Worm.svelte';
 
 	let innerHeight = 0;
 	let invertedBranches = [];
@@ -20,11 +21,11 @@
 			initialBranchLength: innerHeight / 33,
 			angleDecrementFactor: 0.95,
 			widthDecrementFactor: 0.9,
-			lengthDecrementFactor: 0.97,
+			lengthDecrementFactor: 0.93,
 			leafProbability: 0,
 			spiralProbability: 0,
-			initialBranchOnBranchProbability: 0.9,
-			branchOnBranchProbabilityDecrementFactor: 1.6,
+			initialBranchOnBranchProbability: 1,
+			branchOnBranchProbabilityDecrementFactor: 1,
 			subBranchesFixedParameters: {
 				branchAngleLimitation: 30,
 				initialBranchWidth: 5,
@@ -36,13 +37,13 @@
 				spiralProbability: 0.007,
 				initialBranchOnBranchProbability: 0.1,
 				branchOnBranchProbabilityDecrementFactor: 0.9,
-				isWindy: false,
+				isWindy: false
 			},
 			initialDepth: 5,
 			magicSeedBranchPosition:
 				(2 * (innerHeight > 700 ? innerHeight / 42 : innerHeight / 30)) / 3 - 2,
 			oldMagicSeedWasClicked: false,
-			isWindy: false,
+			isWindy: false
 		});
 	}
 </script>
@@ -62,6 +63,7 @@
 			</div>
 		</div>
 	{/if}
+	<Worm numberRectangles={2} segmentLength={10} segmentWidth={5} speed={0.5} maxTurnAngle={0.1} />
 </div>
 
 <style>
@@ -96,5 +98,4 @@
 		max-width: 100dvw;
 		max-height: 100dvh;
 	}
-
 </style>
