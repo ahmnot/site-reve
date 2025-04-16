@@ -127,7 +127,8 @@
 		leafProbability: 0.98,
 		spiralProbability: 0.05,
 		initialBranchOnBranchProbability: 0.1,
-		branchOnBranchProbabilityDecrementFactor: 0.5
+		branchOnBranchProbabilityDecrementFactor: 0.5,
+		isWindy: true,
 	};
 
 	// Génération initiale de l’arbre (se déclenche uniquement si la magicSeed n’a pas encore été cliquée)
@@ -151,7 +152,8 @@
 			subBranchesFixedParameters,
 			initialDepth,
 			magicSeedBranchPosition,
-			oldMagicSeedWasClicked
+			oldMagicSeedWasClicked,
+			isWindy: true,
 		});
 	}
 

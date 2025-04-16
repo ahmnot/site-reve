@@ -60,7 +60,8 @@ export function generateBranches(config) {
         subBranchesFixedParameters = {},
         initialDepth,
         magicSeedBranchPosition,
-        oldMagicSeedWasClicked
+        oldMagicSeedWasClicked,
+        isWindy
     } = config;
 
     const finalBranches = [];
@@ -136,7 +137,7 @@ export function generateBranches(config) {
             rotation: `${rotationToAdd}deg`,
             color: 'tan',
             windIntensity: `3px`,
-            windy: i % 3 === 0,
+            windy: isWindy ? i % 3 === 0 : 0 ,
             childBranches: []
         };
 
@@ -180,7 +181,7 @@ export function generateBranches(config) {
                 rotation: `${Math.random() < 0.5 ? 90 : -90}deg`,
                 color: 'forestgreen',
                 windIntensity: `${2 / (widthDecrementFactor * 0.95)}px`,
-                windy: i % 9 === 0,
+                windy:  isWindy ? i % 9 === 0 : 0,
                 childBranches: []
             });
         }

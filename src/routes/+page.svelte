@@ -13,21 +13,25 @@
 	import NegativeCube3DScene from './NegativeCube3DScene.svelte';
 	import { tweened } from 'svelte/motion';
 	import { cubicOut } from 'svelte/easing';
-	// Indique si Level2 est actuellement affiché (en vue)
-	let isShowingLevel2 = false;
+	// Importer notre store
+	import { showLevel2 } from '../lib/levelStore.js';
 
 	// La valeur de translation verticale (en pixels)
 	// On part de 0 (affichage de Level1)
 	const offsetY = tweened(0, { duration: 800, easing: cubicOut });
 
-	// Fonction toggle pour alterner entre Level1 et Level2
-	function toggleLevels() {
-		if (isShowingLevel2) {
-			offsetY.set(0);
-		} else {
+	// Réaction au store : si showLevel2 passe à true, on passe à Level2
+	$: {
+		if ($showLevel2) {
 			offsetY.set(-window.innerHeight);
+		} else {
+			offsetY.set(0);
 		}
-		isShowingLevel2 = !isShowingLevel2;
+	}
+
+	// La fonction toggleLevels peut toujours être utilisée pour un déclencheur manuel
+	function toggleLevels() {
+		showLevel2.update((current) => !current);
 	}
 </script>
 
@@ -44,9 +48,9 @@
 	</div>
 </div>
 
-<!-- Bouton de déclenchement (à remplacer par l'action spécifique quand tu l'auras définie) -->
+<!-- Bouton de test, vous pouvez le retirer si le changement se fait uniquement depuis NegativeCube3DScene -->
 <button on:click={toggleLevels}>
-	{isShowingLevel2 ? 'Retour Level1' : 'Activer Level2'}
+	{$showLevel2 ? 'Retour Level1' : 'Activer Level2'}
 </button>
 
 <!-- <div class="outer-container">

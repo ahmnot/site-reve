@@ -4,41 +4,45 @@
 
 	let innerHeight = 0;
 	let invertedBranches = [];
+	let expanded = true;
+
+	$: treeGroundPosition = -(innerHeight + (innerHeight * 0.5) / 33);
 
 	// Génération de l'arbre inversé dès que la hauteur est disponible
 	$: if (innerHeight) {
 		invertedBranches = generateBranches({
-			numberOfBranches: innerHeight > 700 ? innerHeight / 42 : innerHeight / 30,
+			numberOfBranches: innerHeight > 700 ? innerHeight / 50 : innerHeight / 40,
 			depth: 2,
 			baseId: 'inverted',
-			branchAngleLimitation: 45,
-			// L'angle initial est à 180° pour inverser la croissance (du haut vers le bas)
+			branchAngleLimitation: 120,
 			initialBranchAngle: 90,
-			initialBranchWidth: innerHeight / 30,
-			initialBranchLength: innerHeight / 20,
+			initialBranchWidth: innerHeight / 33,
+			initialBranchLength: innerHeight / 33,
 			angleDecrementFactor: 0.95,
 			widthDecrementFactor: 0.9,
-			lengthDecrementFactor: 0.91,
+			lengthDecrementFactor: 0.97,
 			leafProbability: 0,
 			spiralProbability: 0,
 			initialBranchOnBranchProbability: 0.9,
 			branchOnBranchProbabilityDecrementFactor: 1.6,
 			subBranchesFixedParameters: {
-				branchAngleLimitation: 25,
+				branchAngleLimitation: 30,
 				initialBranchWidth: 5,
 				initialBranchLength: 15,
 				angleDecrementFactor: 1.9,
-				lengthDecrementFactor: 0.95,
-				widthDecrementFactor: 0.9,
+				lengthDecrementFactor: 0.98,
+				widthDecrementFactor: 0.86,
 				leafProbability: 0,
-				spiralProbability: 0.009,
+				spiralProbability: 0.007,
 				initialBranchOnBranchProbability: 0.1,
-				branchOnBranchProbabilityDecrementFactor: 0.1
+				branchOnBranchProbabilityDecrementFactor: 0.9,
+				isWindy: false,
 			},
-			initialDepth: 2,
+			initialDepth: 5,
 			magicSeedBranchPosition:
 				(2 * (innerHeight > 700 ? innerHeight / 42 : innerHeight / 30)) / 3 - 2,
-			oldMagicSeedWasClicked: false
+			oldMagicSeedWasClicked: false,
+			isWindy: false,
 		});
 	}
 </script>
@@ -47,13 +51,16 @@
 
 <div class="outer-container">
 	{#if invertedBranches.length}
-		<!-- Utilisation du composant Tree avec la classe "inverted" pour ajuster les styles -->
-		<Tree
-			treeGround="-1420px"
-			leftPosition="50%"
-			isFirstBranchGrowing={true}
-			allTheBranches={invertedBranches}
-		/>
+		<div class="central">
+			<!-- Utilisation du composant Tree avec la classe "inverted" pour ajuster les styles -->
+			<div class="left-adjuster">
+				<Tree
+					treeGround="{treeGroundPosition}px"
+					isFirstBranchGrowing={true}
+					allTheBranches={invertedBranches}
+				/>
+			</div>
+		</div>
 	{/if}
 </div>
 
@@ -67,6 +74,27 @@
 		height: 100dvh;
 		background: linear-gradient(to top, #050b0e, #182b31, #244452);
 		color: #ffffff00;
+	}
+
+	.left-adjuster {
+		position: relative;
+		left: -22.5%;
+		display: flex;
+		justify-content: center;
+		/* Ajoutez une marge pour décaler verticalement le Tree */
+		margin-top: 100dvh;
+	}
+
+	.central {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		background: linear-gradient(to top, #050b0e, #182b31, #503a19c0);
+		width: calc(100dvh * var(--aspect-ratio));
+		height: 100dvh;
+		background-color: rgba(255, 252, 240, 0);
+		max-width: 100dvw;
+		max-height: 100dvh;
 	}
 
 </style>

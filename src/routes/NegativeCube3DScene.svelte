@@ -1,4 +1,5 @@
 <script>
+	// NegativeCube3DScene.svelte
 	import { onMount } from 'svelte';
 	import {
 		PerspectiveCamera,
@@ -25,6 +26,7 @@
 	import iridescentCubeFS from '../lib/shaders/iridescentCubeFS.glsl';
 	import simpleCubeVS from '../lib/shaders/simpleCubeVS.glsl';
 	import simpleCubeFS from '../lib/shaders/simpleCubeFS.glsl';
+	import { showLevel2 } from '../lib/levelStore.js';
 
 	export let isVisible = false;
 
@@ -34,6 +36,16 @@
 
 	function triggerConfetti() {
 		confettiVisible = true; // Montrer le composant Confetti
+	}
+
+	// Gestion de la soumission du TextInput
+	function handleTextSubmit(e) {
+		const value = e.detail.value;
+		console.log('Texte validé :', value);
+		if (value.toUpperCase() === 'INFRAMONDE') {
+			// On met à jour le store pour afficher Level2
+			showLevel2.set(true);
+		}
 	}
 
 	onMount(async () => {
@@ -298,7 +310,7 @@
 <div bind:this={container} class:isVisible></div>
 
 {#if confettiVisible}
-	<TextInput on:submit={(e) => console.log('Texte validé :', e.detail.value)} />
+	<TextInput on:submit={handleTextSubmit} />
 {/if}
 
 <style>
