@@ -18,8 +18,8 @@
 
 <style>
 	.text-input-wrapper {
-		position: fixed;
-		top: 20px;
+		position: absolute; /* Changé de fixed à absolute */
+		top: 20px; 
 		left: 20px;
 		background-color: #f1feff83;
 		border: 1px solid #d3b58c73;
@@ -27,8 +27,8 @@
 	}
 
 	input {
-		width: 250px;
-		height: 32px;
+		width: 240px;
+		height: 30px;
 		font-size: 1rem;
 		font-family: 'Minecraft', sans-serif;
 		border: none;

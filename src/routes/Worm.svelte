@@ -1,5 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
+	import { fade } from 'svelte/transition';
 
 	/** Nombre de segments du ver */
 	export let numberRectangles = 20;
@@ -22,7 +23,7 @@
 	/** Taille des pépites (px) */
 	export let nuggetSize = 10;
 	/** Angle d'hésitation (rad) lors de l'attraction vers une pépite */
-	export let hesitationAngle = 1;
+	export let hesitationAngle = 1.5;
 	/** Durée de vie d'une pépite non collectée (ms) */
 	export let nuggetLifetime = 5000;
 
@@ -36,11 +37,14 @@
 	function initSegments() {
 		vw = window.innerWidth;
 		vh = window.innerHeight;
-		const startX = vw / 2;
-		const startY = vh / 2;
+		const margin = 100; // décalage depuis le coin
+		// Démarrage en bas à droite
+		const startX = vw - segmentLength / 2 - margin;
+		const startY = vh - segmentWidth / 2 - margin;
 		segments = [];
+		// Position initiale alignée vers la gauche
 		for (let i = 0; i < numberRectangles; i++) {
-			segments.push({ x: startX - i * segmentLength, y: startY, angle: 0 });
+			segments.push({ x: startX - i * segmentLength, y: startY, angle: Math.PI });
 		}
 		nuggets = [];
 		nextNuggetId = 0;
@@ -118,23 +122,23 @@
 				desiredAngle = -Math.PI / 2 + randBetween(-maxAvoidAngle, +maxAvoidAngle);
 				isAvoiding = true;
 			} else {
-				// Zigzag normal
+				// 6️⃣ Zigzag normal
 				desiredAngle = head.angle + randBetween(-maxTurnAngle, +maxTurnAngle);
 			}
 		}
 
-		// 6️⃣ Rotation progressive vers desiredAngle
+		// 7️⃣ Rotation progressive vers desiredAngle
 		let delta = normalizeAngle(desiredAngle - head.angle);
 		const rate = isAvoiding || isAttracting ? avoidTurnRate : maxTurnAngle;
 		head.angle += Math.sign(delta) * Math.min(Math.abs(delta), rate);
 
-		// 7️⃣ Déplacement de la tête
+		// 8️⃣ Déplacement de la tête
 		head.x += Math.cos(head.angle) * speed;
 		head.y += Math.sin(head.angle) * speed;
 		head.x = Math.min(maxX, Math.max(minX, head.x));
 		head.y = Math.min(maxY, Math.max(minY, head.y));
 
-		// 8️⃣ Collecte de pépites : contact bord à bord
+		// 9️⃣ Collecte de pépites : contact bord à bord
 		for (let i = nuggets.length - 1; i >= 0; i--) {
 			const n = nuggets[i];
 			const dx = Math.abs(head.x - n.x);
@@ -148,7 +152,7 @@
 			}
 		}
 
-		// 9️⃣ Mise à jour des autres segments
+		// 10️⃣ Mise à jour des autres segments
 		for (let i = 1; i < segments.length; i++) {
 			const prev = segments[i - 1];
 			const seg = segments[i];
@@ -160,7 +164,7 @@
 			seg.y = prev.y - Math.sin(ang) * segmentLength;
 		}
 
-		// 10️⃣ Déclencher la réactivité
+		// 11️⃣ Déclencher la réactivité
 		segments = segments;
 		nuggets = nuggets;
 
@@ -183,6 +187,13 @@
 	height="100%"
 	style="position:absolute; top:0; left:0; pointer-events:none; z-index:5;"
 >
+	<defs>
+		<radialGradient id="haloGrad" cx="50%" cy="50%" r="50%">
+			<stop offset="0%" stop-color="white" stop-opacity="0.6" />
+			<stop offset="100%" stop-color="white" stop-opacity="0" />
+		</radialGradient>
+	</defs>
+
 	{#each nuggets as n (n.id)}
 		<rect
 			x={n.x - nuggetSize / 2}
@@ -190,6 +201,8 @@
 			width={nuggetSize}
 			height={nuggetSize}
 			fill="#d4af37"
+			in:fade={{ duration: 400 }}
+			out:fade={{ duration: 400 }}
 		/>
 	{/each}
 
@@ -204,3 +217,23 @@
 		/>
 	{/each}
 </svg>
+
+<style>
+	svg defs {
+		position: absolute;
+	}
+	@keyframes pulse {
+		0% {
+			r: 0;
+			opacity: 0.6;
+		}
+		50% {
+			r: 1;
+			opacity: 0;
+		}
+		100% {
+			r: 0;
+			opacity: 0.6;
+		}
+	}
+</style>

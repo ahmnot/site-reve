@@ -17,6 +17,10 @@
 	// Import du store pour la génération des branches
 	import { generateBranches, resetBranchGeneration } from '../lib/branchesStore.js';
 
+	import { showTextInput } from '../lib/textInputStore.js';
+	import TextInput from './TextInput.svelte';
+	import { showLevel2, showLevel3 } from '../lib/levelStore.js';
+
 	let expanded = true;
 	let isFirstClick = false;
 	let oldMagicSeedWasClicked = false; // Détermine si la magicSeed a déjà été cliquée
@@ -169,11 +173,27 @@
 			showNegativeCube = true;
 		}, 1000);
 	}
+
+// Gestion de la soumission du TextInput
+function handleTextSubmit(e) {
+	const value = e.detail.value;
+	console.log('Texte validé :', value);
+	if (value.toUpperCase() === 'INFRAMONDE') {
+		// On met à jour le store pour afficher Level2
+		showLevel2.set(true);
+	} else if (value.toUpperCase() === 'SUPRAMONDE') {
+		showLevel3.set(true);
+	}
+}
 </script>
 
 <svelte:window bind:innerHeight />
 
 <div class="outer-container">
+
+	{#if $showTextInput}
+		<TextInput on:submit={handleTextSubmit} />
+	{/if}
 	<div class="central" class:expanded>
 		<BoxWithAWordWithNuageTarget
 			{expanded}
@@ -218,6 +238,7 @@
 	}
 
 	.outer-container {
+		position: relative;
 		display: flex;
 		justify-content: center;
 		align-items: center;

@@ -19,34 +19,18 @@
 	import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 	import { Group } from 'three';
 
-	import TextInput from './TextInput.svelte';
-
 	// Shaders existants
 	import iridescentCubeVS from '../lib/shaders/iridescentCubeVS.glsl';
 	import iridescentCubeFS from '../lib/shaders/iridescentCubeFS.glsl';
 	import simpleCubeVS from '../lib/shaders/simpleCubeVS.glsl';
 	import simpleCubeFS from '../lib/shaders/simpleCubeFS.glsl';
-	import { showLevel2 } from '../lib/levelStore.js';
+	
+	import { showTextInput } from '../lib/textInputStore.js';
 
 	export let isVisible = false;
 
 	let container;
 
-	let confettiVisible = false;
-
-	function triggerConfetti() {
-		confettiVisible = true; // Montrer le composant Confetti
-	}
-
-	// Gestion de la soumission du TextInput
-	function handleTextSubmit(e) {
-		const value = e.detail.value;
-		console.log('Texte validé :', value);
-		if (value.toUpperCase() === 'INFRAMONDE') {
-			// On met à jour le store pour afficher Level2
-			showLevel2.set(true);
-		}
-	}
 
 	onMount(async () => {
 		// 1. Créer la scène et la caméra
@@ -57,7 +41,7 @@
 			0.01,
 			100
 		);
-		camera.position.set(0, 0, -95); // Position de la caméra
+		camera.position.set(0, 0, -50); // Position de la caméra
 
 		// 2. Créer le renderer
 		const renderer = new WebGLRenderer({ antialias: true, alpha: true });
@@ -128,14 +112,9 @@
 
 			// Vérification du match
 			if (positionMatch && rotationMatch) {
-				if (!confettiVisible) {
-					confettiVisible = true;
-					triggerConfetti();
-				}
+				showTextInput.set(true);
 			} else {
-				if (confettiVisible) {
-					confettiVisible = false;
-				}
+				showTextInput.set(false);
 			}
 		}
 
@@ -308,10 +287,6 @@
 </script>
 
 <div bind:this={container} class:isVisible></div>
-
-{#if confettiVisible}
-	<TextInput on:submit={handleTextSubmit} />
-{/if}
 
 <style>
 	div {

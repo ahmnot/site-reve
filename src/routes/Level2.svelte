@@ -1,11 +1,11 @@
 <script>
+	// Level2.svelte
 	import Tree from './tree-components/Tree.svelte';
 	import { generateBranches } from '../lib/branchesStore.js';
 	import Worm from './Worm.svelte';
 
 	let innerHeight = 0;
 	let invertedBranches = [];
-	let expanded = true;
 
 	$: treeGroundPosition = -(innerHeight + (innerHeight * 0.5) / 33);
 
@@ -53,7 +53,6 @@
 <div class="outer-container">
 	{#if invertedBranches.length}
 		<div class="central">
-			<!-- Utilisation du composant Tree avec la classe "inverted" pour ajuster les styles -->
 			<div class="left-adjuster">
 				<Tree
 					treeGround="{treeGroundPosition}px"
@@ -63,7 +62,7 @@
 			</div>
 		</div>
 	{/if}
-	<Worm numberRectangles={2} segmentLength={10} segmentWidth={5} speed={0.5} maxTurnAngle={0.1} />
+	<Worm numberRectangles={2} segmentLength={10} segmentWidth={5} speed={0.2} maxTurnAngle={0.1} />
 </div>
 
 <style>
