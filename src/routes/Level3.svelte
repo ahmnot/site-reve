@@ -2,8 +2,8 @@
 	// Level3.svelte
 	import { onMount } from 'svelte';
 
-	const numberOfTopStars = 15;
-	const numberOfMiddleStars = 10;
+	const numberOfTopStars = 5;
+	const numberOfMiddleStars = 5;
 	const topStars = Array(numberOfTopStars).fill(0);
 	const middleStars = Array(numberOfMiddleStars).fill(0);
 </script>
@@ -21,7 +21,7 @@
 		<div
 			class="star"
 			style="left: {Math.random() * 100}%; 
-					top: {Math.random() * 50}%;
+					top: {Math.random() * 75}%;
 					animation-delay: {Math.random() * 2}s;"
 		></div>
 	{/each}
@@ -37,8 +37,8 @@
 		left: 50%;
 		top: 20vh;
 		transform: translate(-50%, -50%); /* Centrage précis */
-		width: 150px; /* Ajustez selon la taille souhaitée */
-		height: 150px;
+		width: 100px; /* Ajustez selon la taille souhaitée */
+		height: 100px;
 		z-index: 10;
 	}
 
@@ -91,7 +91,7 @@
 		opacity: 0;
 		animation:
 			shimmer 3s ease-in-out infinite,
-			twinkle 5s ease-in-out infinite;
+			twinkle 10s ease-in-out infinite;
         z-index: 5;
 	}
 
@@ -110,7 +110,7 @@
 	@keyframes twinkle {
 		0%,
 		100% {
-			opacity: 0.5;
+			opacity: 0.2;
 		}
 		50% {
 			opacity: 1;
