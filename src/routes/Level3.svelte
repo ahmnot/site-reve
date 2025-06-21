@@ -51,11 +51,11 @@
 		height: 100dvh;
 		background: linear-gradient(
 			to bottom,
-			#070707,
-			#070707,
-			#070707,
-			#090f11,
-			#090f11,
+			#111111,
+			#111111,
+			#111111,
+			#0f191d,
+			#0f191d,
 			#131f24,
 			#496b7c
 		);
@@ -70,10 +70,10 @@
 			to top,
 			#496b7c,
 			#131f24,
-			#090f11,
-			#090f11,
-			#090f11,
-			#070707,
+			#0f191d,
+			#0f191d,
+			#0f191d,
+			#111111,
 			#000000
 		);
 		width: calc(100dvh * var(--aspect-ratio));
@@ -92,7 +92,7 @@
 		animation:
 			shimmer 3s ease-in-out infinite,
 			twinkle 10s ease-in-out infinite;
-        z-index: 5;
+		z-index: 5;
 	}
 
 	@keyframes shimmer {

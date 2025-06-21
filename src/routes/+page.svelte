@@ -21,21 +21,27 @@
 	onMount(() => {
 		// position initiale **sans animation** sur Level1
 		offsetY.set(-window.innerHeight * currentLevel, { duration: 0 });
-		// maintenant qu’on est à la bonne position, on peut afficher
+		// maintenant qu'on est à la bonne position, on peut afficher
 		mounted = true;
 	});
+
+	// Recalculer la position quand la hauteur de la fenêtre change
+	$: if (mounted && innerHeight) {
+		// Mise à jour sans animation lors du redimensionnement
+		offsetY.set(-innerHeight * currentLevel, { duration: 0 });
+	}
 
 	function monter() {
 		if (currentLevel > 0) {
 			currentLevel -= 1;
-			offsetY.set(-window.innerHeight * currentLevel);
+			offsetY.set(-innerHeight * currentLevel);
 		}
 	}
 
 	function descendre() {
 		if (currentLevel < 2) {
 			currentLevel += 1;
-			offsetY.set(-window.innerHeight * currentLevel);
+			offsetY.set(-innerHeight * currentLevel);
 		}
 	}
 
@@ -58,10 +64,10 @@
 		</div>
 	</div>
 
-	<div class="controls">
+	<!-- <div class="controls">
 		<button on:click={monter} disabled={currentLevel === 0}>Monter</button>
 		<button on:click={descendre} disabled={currentLevel === 2}>Descendre</button>
-	</div>
+	</div> -->
 {/if}
 
 <style>
@@ -71,14 +77,19 @@
 		position: relative;
 	}
 	.levels {
-		height: 300vh; /* 3 niveaux × 100vh */
+		/* Utilise la propriété CSS calc() pour toujours avoir 3x la hauteur viewport */
+		height: 300vh;
 		width: 100%;
+		position: relative;
 	}
 	.level {
 		height: 100vh;
 		width: 100%;
+		/* S'assure que chaque niveau reste bien contenu */
+		position: relative;
+		overflow: hidden;
 	}
-	.controls {
+	/* .controls {
 		position: fixed;
 		bottom: 20px;
 		left: 10%;
@@ -90,5 +101,5 @@
 	.controls button {
 		padding: 0.5em 1em;
 		font-size: 1rem;
-	}
+	} */
 </style>
