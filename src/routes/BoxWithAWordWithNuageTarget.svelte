@@ -47,6 +47,7 @@
 	$: innerHeight = 0;
 
 	onMount(() => {
+		let isPhysicsActive = true;
 
 		isMobile = /iPhone|iPad|iPod|Android/i.test(window.navigator.userAgent);
 
@@ -236,7 +237,12 @@
 
 			boxWithAWord.render();
 			newMagicSeed.render();
-			Matter.Engine.update(engine);
+
+            // Update Matter seulement si actif
+            if (isPhysicsActive) {
+                Matter.Engine.update(engine);
+            }
+
 			requestAnimationFrame(render);
 
 			if (timeSinceNewMagicSeedVisible>1000) {
@@ -303,6 +309,10 @@
 						newMagicSeedElem.style.cursor = "default";
 
 						Matter.Body.setStatic(newMagicSeed.body, true);
+
+                        // MAINTENANT on peut arrêter la physique
+						isPhysicsActive = false;
+
 					}, 1500); // Délai avant de commencer la croissance
 
 				}
