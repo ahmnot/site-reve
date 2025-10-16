@@ -3,12 +3,13 @@
 	import { onMount } from 'svelte';
 	import '../css/global.css';
 	import '../css/fonts.css';
-	import Level1 from './Level1.svelte';
-	import Level2 from './Level2.svelte';
-	import Level3 from './Level3.svelte';
 	import { tweened } from 'svelte/motion';
 	import { cubicOut } from 'svelte/easing';
 	import { showLevel2, showLevel3 } from '../lib/levelStore.js';
+
+	let Level1Component = null;
+	let Level2Component = null;
+	let Level3Component = null;
 
 	let innerHeight;
 	// 0 = Level3, 1 = Level1, 2 = Level2
@@ -18,11 +19,27 @@
 	// store pour animer la translation
 	const offsetY = tweened(0, { duration: 800, easing: cubicOut });
 
-	onMount(() => {
+	onMount(async () => {
 		// position initiale **sans animation** sur Level1
 		offsetY.set(-window.innerHeight * currentLevel, { duration: 0 });
+
+		// Charger UNIQUEMENT Level1 au démarrage
+		const level1Module = await import('./Level1.svelte');
+		Level1Component = level1Module.default;
 		// maintenant qu'on est à la bonne position, on peut afficher
 		mounted = true;
+
+		//Précharger les autres niveaux en arrière-plan (après 2 secondes)
+		setTimeout(async () => {
+			if (!Level2Component) {
+				const level2Module = await import('./Level2.svelte');
+				Level2Component = level2Module.default;
+			}
+			if (!Level3Component) {
+				const level3Module = await import('./Level3.svelte');
+				Level3Component = level3Module.default;
+			}
+		}, 2000); // Après 2 secondes d'affichage de Level1
 	});
 
 	// Recalculer la position quand la hauteur de la fenêtre change
@@ -45,22 +62,44 @@
 		}
 	}
 
-	$: if ($showLevel2) {
+	$: if ($showLevel2 && Level2Component) {
 		descendre();
 	}
 
-	$: if ($showLevel3) {
+	$: if ($showLevel3 && Level3Component) {
 		monter();
 	}
+	
 </script>
 
 <svelte:window bind:innerHeight />
 {#if mounted}
 	<div class="viewport">
 		<div class="levels" style="transform: translateY({$offsetY}px);">
-			<div class="level"><Level3 /></div>
-			<div class="level"><Level1 /></div>
-			<div class="level"><Level2 /></div>
+			<!-- Level3 : chargé à la demande -->
+			<div class="level">
+				{#if Level3Component}
+					<svelte:component this={Level3Component} />
+				{:else}
+					<div class="loading">✨</div>
+				{/if}
+			</div>
+
+			<!-- Level1 : toujours chargé en premier -->
+			<div class="level">
+				{#if Level1Component}
+					<svelte:component this={Level1Component} />
+				{/if}
+			</div>
+
+			<!-- Level2 : chargé à la demande -->
+			<div class="level">
+				{#if Level2Component}
+					<svelte:component this={Level2Component} />
+				{:else}
+					<div class="loading">⏳</div>
+				{/if}
+			</div>
 		</div>
 	</div>
 
