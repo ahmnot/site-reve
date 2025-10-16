@@ -1,6 +1,6 @@
 <script>
 	// NegativeCube3DScene.svelte
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import {
 		PerspectiveCamera,
 		Scene,
@@ -30,7 +30,14 @@
 	export let isVisible = false;
 
 	let container;
-
+	let renderer;
+	let iridescentCubeGeometry;
+	let iridescentCubeMaterial;
+	let lampCubeGeometry;
+	let lampCubeMaterial;
+	let edgesGeometry;
+	let outlineMaterial;
+	let rafId; // Pour stocker l'ID de requestAnimationFrame
 
 	onMount(async () => {
 		// 1. Créer la scène et la caméra
@@ -185,6 +192,11 @@
 		const tempWorldPos = new Vector3();
 
 		function animate() {
+			// Vérifier isVisible directement dans la boucle
+			if (!isVisible) {
+				rafId = requestAnimationFrame(animate);
+				return; // Ne pas render mais continuer la boucle
+			}
 			requestAnimationFrame(animate);
 
 			const elapsedTime = clock.getElapsedTime();
@@ -277,12 +289,51 @@
 		renderer.domElement.addEventListener('pointerup', onPointerUp);
 		renderer.domElement.addEventListener('pointerleave', onPointerUp);
 
-		// 12. Gestion du redimensionnement fenêtre
-		window.addEventListener('resize', () => {
+		function handleResize() {
 			camera.aspect = container.clientWidth / container.clientHeight;
 			camera.updateProjectionMatrix();
 			renderer.setSize(container.clientWidth, container.clientHeight);
-		});
+		}
+
+		// 12. Gestion du redimensionnement fenêtre
+		window.addEventListener('resize', handleResize);
+
+		// Cleanup dans onDestroy
+		return () => {
+			window.removeEventListener('resize', handleResize);
+			renderer.domElement.removeEventListener('pointerdown', onPointerDown);
+			renderer.domElement.removeEventListener('pointermove', onPointerMove);
+			renderer.domElement.removeEventListener('pointerup', onPointerUp);
+			renderer.domElement.removeEventListener('pointerleave', onPointerUp);
+		};
+	});
+
+	// Cleanup proper dans onDestroy
+	onDestroy(() => {
+		if (rafId) {
+			cancelAnimationFrame(rafId);
+		}
+		if (renderer) {
+			renderer.dispose();
+		}
+		if (iridescentCubeGeometry) {
+			iridescentCubeGeometry.dispose();
+		}
+		if (iridescentCubeMaterial) {
+			iridescentCubeMaterial.dispose();
+		}
+		if (lampCubeGeometry) {
+			lampCubeGeometry.dispose();
+		}
+		if (lampCubeMaterial) {
+			lampCubeMaterial.dispose();
+		}
+		if (edgesGeometry) {
+			edgesGeometry.dispose();
+		}
+		if (outlineMaterial) {
+			outlineMaterial.dispose();
+		}
 	});
 </script>
 
