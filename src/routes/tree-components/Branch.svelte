@@ -4,6 +4,7 @@
 	import MagicSeed from './MagicSeed.svelte';
 	import { createEventDispatcher } from 'svelte';
 	import { magicSeedPositionWritable } from '../../lib/magicSeedPositionStore.js';
+	import { getSmallSeedStore } from '../../lib/smallMagicSeedsStore.js'; // NOUVEAU
 
 	export let zIndex;
 	export let width;
@@ -14,9 +15,11 @@
 	export let color = 'darkgoldenrod';
 	export let windIntensity = 0;
 	export let magicseed = false;
+	export let smallMagicSeed = false;
+	export let seedIndex = -1; 
 	export let parentLength = 0;
 	export let windy = true;
-	export let swayOnHover = false; // New prop
+	export let swayOnHover = false;
 
 	let audioSway;
 
@@ -47,6 +50,24 @@
 		branchMagicSeedElement.remove();
 	}
 
+	// Gestion du clic sur les petites graines
+	function handleSmallMagicSeedClick() {
+		const smallSeedElement = document.querySelector(`#oldSmallMagicSeed-${seedIndex}`);
+		const rect = smallSeedElement.getBoundingClientRect();
+		
+		// Sauvegarder la position dans le store correspondant
+		const store = getSmallSeedStore(seedIndex);
+		store.set({ 
+			top: rect.top, 
+			left: rect.left, 
+			angle: rotation,
+			clicked: true 
+		});
+		
+		// Supprimer l'oldSmallSeed
+		smallSeedElement.remove();
+	}
+
 	function startSway() {
 		if (swayOnHover) {
 			// Réinitialise le temps du son pour le rejouer à chaque survol
@@ -69,12 +90,21 @@
 </script>
 
 {#if magicseed}
+	<!-- oldMagicSeed : sur l'arbre, pas de physique -->
 	<div
 		id="branchMagicSeed"
 		on:click={handleBranchMagicSeedClick}
 		on:touchstart={handleBranchMagicSeedClick}
 	>
 		<MagicSeed {parentLength} {rotation} {growing} />
+	</div>
+{:else if smallMagicSeed}
+	<div
+		id="oldSmallMagicSeed-{seedIndex}"
+		on:click={handleSmallMagicSeedClick}
+		on:touchstart={handleSmallMagicSeedClick}
+	>
+		<MagicSeed {parentLength} {rotation} {growing} isSmall={true} />
 	</div>
 {:else}
 	<div
@@ -109,6 +139,7 @@
 				color={branch.color}
 				windIntensity={branch.windIntensity}
 				magicseed={branch.magicseed}
+				smallMagicSeed={branch.smallMagicSeed}
 				windy={branch.windy}
 				parentLength={length}
 				on:branchMagicSeedWasClicked
@@ -161,10 +192,11 @@
 		height: var(--branchLength);
 	}
 
-	#branchMagicSeed:hover {
+	#branchMagicSeed:hover,
+	[id^="oldSmallMagicSeed-"]:hover {
 		cursor: pointer;
 	}
-
+	
 	.branch.swaying {
 		animation: sway-quick 0.5s ease-in-out normal !important;
 	}

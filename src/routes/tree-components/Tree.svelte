@@ -27,6 +27,7 @@
 <div class="tree" style="left: {leftPosition}; transform: translateY({treeGround}) rotate({allTheBranches[0].rotation});">
 	{#each allTheBranches as branch (branch.id)}
 		<Branch on:branchMagicSeedWasClicked
+			on:smallMagicSeedWasClicked
 			zIndex={branch.zIndex}
 			width={branch.width}
 			length={branch.length}

@@ -14,6 +14,7 @@
 	export let blooming = false;
 	export let leftOffset = 0;
 	export let bottomOffset = 0;
+	export let isSmall = false;
 
 	let showMysticalScripture = false;
 	let randomMysticalText;
@@ -76,6 +77,7 @@
 	class="magic-seed holographic"
 	class:growing
 	class:blooming
+	class:is-small={isSmall}
 	style="
 	bottom: {parentLength};
 	transform: rotate({rotation});
@@ -83,7 +85,7 @@
 	--bottomOffset: {bottomOffset}px;
 "
 >
-	{#if blooming}
+	{#if blooming && !isSmall}
 		<div class="center-elements-grid">
 			<div></div>
 			<div class="letters-with-links slant mystical-alpha">
@@ -182,6 +184,12 @@
 	.magic-seed.growing {
 		height: 50px;
 		width: 50px;
+	}
+
+	/* Style pour les petites graines */
+	.magic-seed.is-small.growing {
+		height: 30px;
+		width: 30px;
 	}
 
 	.magic-seed.holographic {

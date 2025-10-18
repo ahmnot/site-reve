@@ -61,7 +61,8 @@ export function generateBranches(config) {
         initialDepth,
         magicSeedBranchPosition,
         oldMagicSeedWasClicked,
-        isWindy
+        isWindy,
+        smallMagicSeedsPositions = [] // positions pour les petites graines
     } = config;
 
     const finalBranches = [];
@@ -141,7 +142,7 @@ export function generateBranches(config) {
             childBranches: []
         };
 
-        // Génération de la MagicSeed sur la dernière branche du trunk
+        // Génération de la MagicSeed principale sur la dernière branche du trunk
         if (magicSeedCondition && i === numberOfBranches - 1) {
             childBranch.childBranches.push({
                 id: generateUniqueId(`${childBranch.id}-seed`),
@@ -155,7 +156,39 @@ export function generateBranches(config) {
             magicSeedAngle = absoluteAngle;
         }
 
-        // Ajout de feuilles sur la branche de la MagicSeed (pour éviter les chevauchements)
+        // Génération des petites graines magiques
+        if (depth === initialDepth && !oldMagicSeedWasClicked) {
+            for (const seedPos of smallMagicSeedsPositions) {
+                if (i === Math.floor(numberOfBranches * seedPos.ratio)) {
+                    // Créer une branche courte pour porter la petite graine
+                    const smallBranchLength = currentLength; // Plus courte
+                    const smallBranchAngle = seedPos.direction === 'left' ? 
+                        -45 : 45;
+                    
+                    childBranch.childBranches.push({
+                        id: generateUniqueId(`${childBranch.id}-smallseed-branch`),
+                        zIndex: 10,
+                        width: `${currentWidth * 0.8}px`,
+                        length: `${smallBranchLength}px`,
+                        rotation: `${smallBranchAngle}deg`,
+                        color: 'tan',
+                        windIntensity: '2px',
+                        windy: false,
+                        childBranches: [{
+                            id: generateUniqueId(`${childBranch.id}-smallseed`),
+                            zIndex: 998,
+                            width: '30px',
+                            length: '30px',
+                            rotation: absoluteAngle + smallBranchAngle,
+                            smallMagicSeed: true, // Marqueur pour les petites graines
+                            seedIndex: seedPos.index // Index unique pour identifier la graine
+                        }]
+                    });
+                }
+            }
+        }
+
+        // Ajout de feuilles sur la branche de la MagicSeed principale (pour éviter les chevauchements)
         if (magicSeedCondition && i < 7) {
             childBranch.childBranches.push({
                 id: generateUniqueId(`${childBranch.id}-leaf`),
@@ -199,25 +232,26 @@ export function generateBranches(config) {
                     ...subBranchesFixedParameters,
                     initialDepth,
                     magicSeedBranchPosition,
-                    oldMagicSeedWasClicked
+                    oldMagicSeedWasClicked,
+                    smallMagicSeedsPositions: []
                 })
             );
         }
 
         parentBranch = childBranch;
 
-        // if (i === numberOfBranches - 1 && !magicSeedCondition) {
-        //     childBranch.childBranches.push({
-        //         id: generateUniqueId(`${childBranch.id}-leaf`),
-        //         zIndex: 100,
-        //         width: '10px',
-        //         length: '12px',
-        //         rotation: `-90deg`,
-        //         color: Math.random() < 0.5 ? 'thistle' : 'mistyrose',
-        //         windIntensity: '10px',
-        //         childBranches: []
-        //     });
-        // }
+         if (i === numberOfBranches - 1 && !magicSeedCondition) {
+             childBranch.childBranches.push({
+                 id: generateUniqueId(`${childBranch.id}-leaf`),
+                 zIndex: 100,
+                 width: '10px',
+                 length: '12px',
+                 rotation: `-90deg`,
+                 color: Math.random() < 0.5 ? 'thistle' : 'mistyrose',
+                 windIntensity: '10px',
+                 childBranches: []
+             });
+         }
     }
 
     return finalBranches;

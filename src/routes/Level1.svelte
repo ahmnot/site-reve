@@ -25,8 +25,15 @@
 	let isFirstClick = false;
 	let oldMagicSeedWasClicked = false; // Détermine si la magicSeed a déjà été cliquée
 
+	// Configuration des petites graines
+	const smallMagicSeedsConfig = [
+		{ index: 0, ratio: 0.25, direction: 'left' },
+		{ index: 1, ratio: 0.5, direction: 'right' },
+		{ index: 2, ratio: 0.75, direction: 'left' }
+	];
+
 	// GROWTH TRIGGERING LOGIC
-	let isFirstBranchGrowing = false;
+	let isFirstBranchGrowing = true;
 	let rainCounter = 0;
 	let rainInterval;
 	let rainTriggeringStartTimestamp = null;
@@ -47,6 +54,8 @@
 	});
 
 	let isCloudAndRainHidden = false;
+
+	let boxWithAWordComponent;
 
 	isRainTriggered.subscribe((value) => {
 		if (value) {
@@ -111,7 +120,8 @@
 			subBranchesFixedParameters,
 			initialDepth,
 			magicSeedBranchPosition,
-			oldMagicSeedWasClicked
+			oldMagicSeedWasClicked,
+			smallMagicSeedsPositions: smallMagicSeedsConfig
 		});
 	}
 
@@ -158,6 +168,7 @@
 			magicSeedBranchPosition,
 			oldMagicSeedWasClicked,
 			isWindy: true,
+			smallMagicSeedsPositions: smallMagicSeedsConfig
 		});
 	}
 
@@ -185,6 +196,13 @@ function handleTextSubmit(e) {
 		showLevel3.set(true);
 	}
 }
+
+	// Fonction pour gérer les clics sur les petites graines
+	function handleSmallMagicSeedClick(event) {
+		// Transférer l'événement au composant BoxWithAWordWithNuageTarget
+		boxWithAWordComponent?.handleSmallSeedClick(event);
+	}
+
 </script>
 
 <svelte:window bind:innerHeight />
@@ -200,6 +218,7 @@ function handleTextSubmit(e) {
 			{toggleExpanded}
 			{oldMagicSeedWasClicked}
 			{isCloudAndRainHidden}
+			bind:this={boxWithAWordComponent}
 		>
 			<Nuage slot="nuageSlot" />
 			<Rain
@@ -226,6 +245,32 @@ function handleTextSubmit(e) {
 				{blooming}
 				{leftOffset}
 				{bottomOffset}
+			/>
+			
+			<!-- Les 3 newSmallSeeds avec physique Matter.js -->
+			<MagicSeed
+				slot="smallSeedSlot0"
+				growing="true"
+				rotation="0"
+				parentLength="0"
+				isSmall={true}
+				blooming={false}
+			/>
+			<MagicSeed
+				slot="smallSeedSlot1"
+				growing="true"
+				rotation="0"
+				parentLength="0"
+				isSmall={true}
+				blooming={false}
+			/>
+			<MagicSeed
+				slot="smallSeedSlot2"
+				growing="true"
+				rotation="0"
+				parentLength="0"
+				isSmall={true}
+				blooming={false}
 			/>
 			<NegativeCube3DScene slot="negativeCubeSlot" isVisible={showNegativeCube} />
 		</BoxWithAWordWithNuageTarget>
