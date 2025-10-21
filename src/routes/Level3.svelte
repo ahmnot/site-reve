@@ -26,7 +26,7 @@
 		></div>
 	{/each}
 	<div class="central">
-		<img src="/img/cercle-transparent.png" alt="Cercle" class="circle-image" />
+		<img src="/img/cercle-transparent.webp" alt="Cercle" class="circle-image" />
 	</div>
 </div>
 

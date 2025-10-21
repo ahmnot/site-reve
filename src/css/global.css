@@ -3,6 +3,14 @@ body {
   margin: 0;
   padding: 0;
   height: 100%;
+  overflow: hidden;
+  position: fixed; /* Empêche le scroll élastique sur iOS */
+  overscroll-behavior: none; /* Empêche le scroll élastique */
+}
+
+/* Empêche le zoom sur double-tap sur mobile */
+* {
+  touch-action: manipulation;
 }
 
 /*tiiny banner hiding*/

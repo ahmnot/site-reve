@@ -20,6 +20,8 @@
 	const offsetY = tweened(0, { duration: 800, easing: cubicOut });
 
 	onMount(async () => {
+		// Forcer la hauteur correcte sur mobile
+		innerHeight = window.innerHeight;
 		// position initiale **sans animation** sur Level1
 		offsetY.set(-window.innerHeight * currentLevel, { duration: 0 });
 
@@ -43,9 +45,15 @@
 	});
 
 	// Recalculer la position quand la hauteur de la fenêtre change
+	// Recalculer avec un debounce pour éviter les problèmes de redimensionnement
+	let resizeTimeout;
+
 	$: if (mounted && innerHeight) {
 		// Mise à jour sans animation lors du redimensionnement
-		offsetY.set(-innerHeight * currentLevel, { duration: 0 });
+		clearTimeout(resizeTimeout);
+		resizeTimeout = setTimeout(() => {
+			offsetY.set(-innerHeight * currentLevel, { duration: 0 });
+		}, 100);
 	}
 
 	function monter() {
@@ -111,18 +119,18 @@
 
 <style>
 	.viewport {
-		height: 100vh;
+		height: 100dvh;
 		overflow: hidden;
 		position: relative;
 	}
 	.levels {
 		/* Utilise la propriété CSS calc() pour toujours avoir 3x la hauteur viewport */
-		height: 300vh;
+		height: 300dvh;
 		width: 100%;
 		position: relative;
 	}
 	.level {
-		height: 100vh;
+		height: 100dvh;
 		width: 100%;
 		/* S'assure que chaque niveau reste bien contenu */
 		position: relative;

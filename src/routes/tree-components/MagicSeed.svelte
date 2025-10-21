@@ -1,5 +1,5 @@
 <script>
-	// MagicSeed.svelte
+	// df.svelte
 	import {
 		vigenereEncode,
 		getRandomOneTwoOrThreeOrFourLetters,
@@ -28,14 +28,27 @@
 		// Ajoutez d'autres liens selon le nombre de lettres
 	];
 
+	// Détecter si c'est un appareil tactile
+	let isTouchDevice = false;
+
 	onMount(() => {
 		// Split the encoded text into an array of letters
-		const mysticalText = vigenereEncode('SUPRAMONDE').split('');
+		const mysticalText = 'SUPRAMONDE'.split('');
 
 		randomMysticalText = getRandomOneTwoOrThreeOrFourLetters(mysticalText);
 
 		randomMysticalText = addSpacesBetweenLetters(randomMysticalText);
+
+		// Détecter les appareils tactiles
+		isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 	});
+
+	// Fonction pour gérer l'ouverture du lien
+	function handleLinkOpen(event, link) {
+		event.preventDefault();
+		// Ouvrir directement dans le même onglet pour éviter le blocage de pop-up
+		window.location.href = link;
+	}
 
 	// Créer un tableau qui associe chaque lettre (non-espace) à son lien
 	$: lettersWithLinks = randomMysticalText
@@ -53,6 +66,11 @@
 				return result;
 			})()
 		: [];
+
+	// Calculer le nombre total de symboles (lettres non-espace)
+	$: totalSymbols = lettersWithLinks.filter(item => item.letter !== ' ').length;
+	// Durée totale du cycle = nombre de symboles * X secondes par symbole
+	$: totalAnimationDuration = totalSymbols * 6;
 
 	$: if (blooming) {
 		setTimeout(() => {
@@ -91,24 +109,20 @@
 					{#if item.letter === ' '}
 						<span>&nbsp;</span>
 					{:else}
+						{@const symbolIndex = lettersWithLinks.slice(0, index).filter(i => i.letter !== ' ').length}
 						<a
 							href={item.link}
 							target="_blank"
 							rel="noopener noreferrer"
-							on:touchstart={(event) => {
-								event.preventDefault();
-								// Ouvrir le lien dans un nouvel onglet en arrière-plan (si possible)
-								const newWindow = window.open(item.link, '_blank', 'noopener,noreferrer');
-								if (newWindow) {
-									newWindow.blur();
-									window.focus();
-								}
-							}}
+							on:click={(event) => handleLinkOpen(event, item.link)}
+							on:touchend={(event) => handleLinkOpen(event, item.link)}
 						>
 							<span
 								class={showMysticalScripture ? 'fade-in-letter' : ''}
-								data-hover-symbol={index === 0 ? '$' : index === 2 ? '%' : index === 4 ? '#'  : '?'}
-								style="transition-delay: {index * 0.2}s"
+								class:show-symbol={isTouchDevice}
+								class:desktop-hover={!isTouchDevice}
+								data-hover-symbol={symbolIndex === 0 ? '$' : symbolIndex === 1 ? '%' : symbolIndex === 2 ? '#'  : '?'}
+								style="transition-delay: {index * 0.2}s; --total-duration: {totalAnimationDuration}s; --symbol-index: {symbolIndex};"
 							>
 								{item.letter}
 							</span>
@@ -127,11 +141,11 @@
 		color: inherit;
 		display: inline-block;
 		cursor: pointer;
+		-webkit-tap-highlight-color: transparent;
 	}
 
-	/* Pseudo-élément qui affichera le symbole au survol */
+	/* Pseudo-élément pour le symbole */
 	a span::after {
-		content: '';
 		position: absolute;
 		top: 50%;
 		left: 100%;
@@ -140,10 +154,67 @@
 		transition: opacity 0.3s ease-in-out;
 	}
 
-	/* Au survol, on affiche le symbole défini dans data-hover-symbol */
-	a span:hover::after {
+	/* DESKTOP - Pas de contenu par défaut, apparition au hover uniquement */
+	span.desktop-hover::after {
+		content: '';
+	}
+
+	a:hover span.desktop-hover::after {
 		content: attr(data-hover-symbol);
 		opacity: 1;
+	}
+
+	/* MOBILE - Contenu toujours présent avec animation séquentielle */
+	span.show-symbol::after {
+		content: attr(data-hover-symbol);
+	}
+
+	span.show-symbol[style*="--symbol-index: 0"]::after {
+		animation: symbol0 var(--total-duration) ease-in-out infinite;
+	}
+	
+	span.show-symbol[style*="--symbol-index: 1"]::after {
+		animation: symbol1 var(--total-duration) ease-in-out infinite;
+	}
+	
+	span.show-symbol[style*="--symbol-index: 2"]::after {
+		animation: symbol2 var(--total-duration) ease-in-out infinite;
+	}
+	
+	span.show-symbol[style*="--symbol-index: 3"]::after {
+		animation: symbol3 var(--total-duration) ease-in-out infinite;
+	}
+
+	/* Keyframes pour l'animation séquentielle mobile */
+	@keyframes symbol0 {
+		0% { opacity: 0; }
+		8% { opacity: 0.1; }
+		17% { opacity: 0.8; }
+		25% { opacity: 0; }
+		100% { opacity: 0; }
+	}
+
+	@keyframes symbol1 {
+		0%, 25% { opacity: 0; }
+		33% { opacity: 0.4; }
+		42% { opacity: 0.8; }
+		50% { opacity: 0; }
+		100% { opacity: 0; }
+	}
+
+	@keyframes symbol2 {
+		0%, 50% { opacity: 0; }
+		58% { opacity: 0.4; }
+		67% { opacity: 0.8; }
+		75% { opacity: 0; }
+		100% { opacity: 0; }
+	}
+
+	@keyframes symbol3 {
+		0%, 75% { opacity: 0; }
+		83% { opacity: 0.4; }
+		92% { opacity: 0.8; }
+		100% { opacity: 0; }
 	}
 
 	:root {
