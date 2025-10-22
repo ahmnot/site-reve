@@ -43,12 +43,11 @@
 		isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 	});
 
-	// Fonction pour gérer l'ouverture du lien dans un nouvel onglet
+	// Fonction pour gérer l'ouverture du lien
 	function handleLinkOpen(event, link) {
 		event.preventDefault();
-		event.stopPropagation();
-		// Ouvrir dans un nouvel onglet - ne sera pas bloqué car déclenché par une vraie interaction utilisateur
-		window.open(link, '_blank', 'noopener,noreferrer');
+		// Ouvrir directement dans le même onglet pour éviter le blocage de pop-up
+		window.location.href = link;
 	}
 
 	// Créer un tableau qui associe chaque lettre (non-espace) à son lien

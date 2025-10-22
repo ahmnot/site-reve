@@ -11,19 +11,28 @@
 	let Level2Component = null;
 	let Level3Component = null;
 
-	let innerHeight;
 	// 0 = Level3, 1 = Level1, 2 = Level2
 	let currentLevel = 1;
 	let mounted = false;
+	let fixedHeight = 0; // Hauteur fixée au chargement, ne change JAMAIS
 
 	// store pour animer la translation
 	const offsetY = tweened(0, { duration: 800, easing: cubicOut });
 
 	onMount(async () => {
-		// Forcer la hauteur correcte sur mobile
-		innerHeight = window.innerHeight;
+		// CRITIQUE : Fixer la hauteur une seule fois au chargement
+		// et ne JAMAIS la changer ensuite
+		if (window.visualViewport) {
+			fixedHeight = window.visualViewport.height;
+		} else {
+			fixedHeight = window.innerHeight;
+		}
+
+		// Appliquer la hauteur fixe via une variable CSS
+		document.documentElement.style.setProperty('--fixed-viewport-height', `${fixedHeight}px`);
+
 		// position initiale **sans animation** sur Level1
-		offsetY.set(-window.innerHeight * currentLevel, { duration: 0 });
+		offsetY.set(-fixedHeight * currentLevel, { duration: 0 });
 
 		// Charger UNIQUEMENT Level1 au démarrage
 		const level1Module = await import('./Level1.svelte');
@@ -41,32 +50,56 @@
 				const level3Module = await import('./Level3.svelte');
 				Level3Component = level3Module.default;
 			}
-		}, 2000); // Après 2 secondes d'affichage de Level1
+		}, 2000);
+
+		// IMPORTANT : Écouter UNIQUEMENT les vrais redimensionnements (rotation d'écran)
+		// pas les changements de clavier
+		if (window.visualViewport) {
+			let resizeTimer;
+			window.visualViewport.addEventListener('resize', () => {
+				clearTimeout(resizeTimer);
+				// Attendre 300ms pour s'assurer que ce n'est pas juste le clavier
+				resizeTimer = setTimeout(() => {
+					const newHeight = window.visualViewport.height;
+					const heightDiff = Math.abs(newHeight - fixedHeight);
+					
+					// Ne mettre à jour QUE si c'est une vraie rotation (grande différence de hauteur)
+					// ET que la hauteur augmente (clavier qui se ferme ou rotation)
+					if (heightDiff > 150 && newHeight > fixedHeight * 0.8) {
+						fixedHeight = newHeight;
+						document.documentElement.style.setProperty('--fixed-viewport-height', `${fixedHeight}px`);
+						offsetY.set(-fixedHeight * currentLevel, { duration: 0 });
+					}
+				}, 300);
+			});
+		}
+
+		// Fallback pour les navigateurs sans visualViewport (très vieux navigateurs)
+		// Mais on veut éviter de réagir au clavier ici aussi
+		let orientationChangeTimer;
+		window.addEventListener('orientationchange', () => {
+			clearTimeout(orientationChangeTimer);
+			orientationChangeTimer = setTimeout(() => {
+				if (!window.visualViewport) {
+					fixedHeight = window.innerHeight;
+					document.documentElement.style.setProperty('--fixed-viewport-height', `${fixedHeight}px`);
+					offsetY.set(-fixedHeight * currentLevel, { duration: 0 });
+				}
+			}, 300);
+		});
 	});
-
-	// Recalculer la position quand la hauteur de la fenêtre change
-	// Recalculer avec un debounce pour éviter les problèmes de redimensionnement
-	let resizeTimeout;
-
-	$: if (mounted && innerHeight) {
-		// Mise à jour sans animation lors du redimensionnement
-		clearTimeout(resizeTimeout);
-		resizeTimeout = setTimeout(() => {
-			offsetY.set(-innerHeight * currentLevel, { duration: 0 });
-		}, 100);
-	}
 
 	function monter() {
 		if (currentLevel > 0) {
 			currentLevel -= 1;
-			offsetY.set(-innerHeight * currentLevel);
+			offsetY.set(-fixedHeight * currentLevel);
 		}
 	}
 
 	function descendre() {
 		if (currentLevel < 2) {
 			currentLevel += 1;
-			offsetY.set(-innerHeight * currentLevel);
+			offsetY.set(-fixedHeight * currentLevel);
 		}
 	}
 
@@ -80,7 +113,7 @@
 	
 </script>
 
-<svelte:window bind:innerHeight />
+<!-- IMPORTANT : Ne PAS binder innerHeight car ça change avec le clavier ! -->
 {#if mounted}
 	<div class="viewport">
 		<div class="levels" style="transform: translateY({$offsetY}px);">
@@ -110,43 +143,39 @@
 			</div>
 		</div>
 	</div>
-
-	<!-- <div class="controls">
-		<button on:click={monter} disabled={currentLevel === 0}>Monter</button>
-		<button on:click={descendre} disabled={currentLevel === 2}>Descendre</button>
-	</div> -->
 {/if}
 
 <style>
+	/* CRITIQUE : Utiliser la variable CSS fixe au lieu de dvh/vh */
 	.viewport {
-		height: 100dvh;
+		height: var(--fixed-viewport-height, 100vh);
+		width: 100%;
+		max-width: 100vw;
 		overflow: hidden;
+		overflow-x: hidden;
 		position: relative;
 	}
+
 	.levels {
-		/* Utilise la propriété CSS calc() pour toujours avoir 3x la hauteur viewport */
-		height: 300dvh;
+		/* 3x la hauteur fixe */
+		height: calc(var(--fixed-viewport-height, 100vh) * 3);
 		width: 100%;
 		position: relative;
 	}
+	
 	.level {
-		height: 100dvh;
+		/* Chaque niveau a la hauteur fixe */
+		height: var(--fixed-viewport-height, 100vh);
 		width: 100%;
-		/* S'assure que chaque niveau reste bien contenu */
 		position: relative;
 		overflow: hidden;
 	}
-	/* .controls {
-		position: fixed;
-		bottom: 20px;
-		left: 10%;
-		transform: translateX(-50%);
+
+	.loading {
 		display: flex;
-		gap: 0.5em;
-		z-index: 10;
+		align-items: center;
+		justify-content: center;
+		height: 100%;
+		font-size: 3rem;
 	}
-	.controls button {
-		padding: 0.5em 1em;
-		font-size: 1rem;
-	} */
 </style>

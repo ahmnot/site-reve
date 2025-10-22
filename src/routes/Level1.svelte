@@ -181,15 +181,24 @@ function handleTextSubmit(e) {
 	if (value.toUpperCase() === 'INFRAMONDE') {
 		// On met à jour le store pour afficher Level2
 		showLevel2.set(true);
+		// On cache le texte input
+		showTextInput.set(false);
 	} else if (value.toUpperCase() === 'SUPRAMONDE') {
 		showLevel3.set(true);
+		// On cache le texte input
+		showTextInput.set(false);
 	}
 }
 </script>
 
 <svelte:window bind:innerHeight />
 
-<div class="outer-container">
+<div class="outer-container" on:touchstart|capture={(e) => {
+	// Si on touche l'input, laisser passer
+	if (e.target.tagName === 'INPUT') {
+		return;
+	}
+}}>
 
 	{#if $showTextInput}
 		<TextInput on:submit={handleTextSubmit} />

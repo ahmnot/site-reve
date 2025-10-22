@@ -67,7 +67,7 @@
 		controls.enableRotate = false;
 		controls.enablePan = false;
 		controls.enableZoom = false;
-		controls.target.set(4, 0, 0);
+		controls.target.set(0.6, 0, 0);
 		controls.update();
 
 		// 4. Groupe racine
@@ -240,7 +240,7 @@
 		linedCube.computeLineDistances();
 
 		// f) Position "en bas à gauche" (ou gauche, selon tes coordonnées)
-		linedCube.position.set(8, -5, 0);
+		linedCube.position.set(5, -5, 0);
 
 		// g) Appliquer une rotation statique
 		linedCube.rotation.x = Math.PI / 4;
@@ -378,8 +378,13 @@
 			if (isPanning) {
 				const deltaX = event.clientX - lastX;
 				const deltaY = event.clientY - lastY;
-				rootGroup.position.x -= deltaX * 0.015;
-				rootGroup.position.y -= deltaY * 0.015;
+
+				// Différencier souris et tactile
+		        const panSpeed = event.pointerType === 'touch' ? 0.03 : 0.015;
+
+
+				rootGroup.position.x -= deltaX * panSpeed;
+				rootGroup.position.y -= deltaY * panSpeed;
 				lastX = event.clientX;
 				lastY = event.clientY;
 			} else if (isRotating) {
@@ -400,10 +405,75 @@
 			}
 		}
 
+		// Gestion des événements tactiles pour mobile
+		function onTouchStart(event) {
+			event.preventDefault();
+			const touches = event.touches;
+			
+			if (touches.length === 1) {
+				// 1 doigt = panning
+				isPanning = true;
+				lastX = touches[0].clientX;
+				lastY = touches[0].clientY;
+			} else if (touches.length === 2) {
+				// 2 doigts = rotation
+				isPanning = false; // Annuler le panning si on était en train
+				isRotating = true;
+				// Calculer le centre entre les deux doigts
+				lastX = (touches[0].clientX + touches[1].clientX) / 2;
+				lastY = (touches[0].clientY + touches[1].clientY) / 2;
+			}
+		}
+
+		function onTouchMove(event) {
+			event.preventDefault();
+			const touches = event.touches;
+			
+			if (touches.length === 1 && isPanning) {
+				// Panning avec 1 doigt
+				const deltaX = touches[0].clientX - lastX;
+				const deltaY = touches[0].clientY - lastY;
+				rootGroup.position.x -= deltaX * 2;
+				rootGroup.position.y -= deltaY * 2;
+				lastX = touches[0].clientX;
+				lastY = touches[0].clientY;
+			} else if (touches.length === 2 && isRotating) {
+				// Rotation avec 2 doigts
+				const centerX = (touches[0].clientX + touches[1].clientX) / 2;
+				const centerY = (touches[0].clientY + touches[1].clientY) / 2;
+				const deltaX = centerX - lastX;
+				const deltaY = centerY - lastY;
+				rootGroup.rotation.y += deltaX * 0.005;
+				rootGroup.rotation.x -= deltaY * 0.005;
+				lastX = centerX;
+				lastY = centerY;
+			}
+		}
+
+		function onTouchEnd(event) {
+			const touches = event.touches;
+			
+			if (touches.length === 0) {
+				// Plus de doigts sur l'écran
+				isPanning = false;
+				isRotating = false;
+			} else if (touches.length === 1 && isRotating) {
+				// On passe de 2 doigts à 1 doigt = retour au panning
+				isRotating = false;
+				isPanning = true;
+				lastX = touches[0].clientX;
+				lastY = touches[0].clientY;
+			}
+		}
+
 		renderer.domElement.addEventListener('pointerdown', onPointerDown);
 		renderer.domElement.addEventListener('pointermove', onPointerMove);
 		renderer.domElement.addEventListener('pointerup', onPointerUp);
 		renderer.domElement.addEventListener('pointerleave', onPointerUp);
+		renderer.domElement.addEventListener('touchstart', onTouchStart, { passive: false });
+		renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: false });
+		renderer.domElement.addEventListener('touchend', onTouchEnd);
+		renderer.domElement.addEventListener('touchcancel', onTouchEnd);
 
 		function handleResize() {
 			camera.aspect = container.clientWidth / container.clientHeight;
@@ -421,6 +491,10 @@
 			renderer.domElement.removeEventListener('pointermove', onPointerMove);
 			renderer.domElement.removeEventListener('pointerup', onPointerUp);
 			renderer.domElement.removeEventListener('pointerleave', onPointerUp);
+			renderer.domElement.removeEventListener('touchstart', onTouchStart);
+			renderer.domElement.removeEventListener('touchmove', onTouchMove);
+			renderer.domElement.removeEventListener('touchend', onTouchEnd);
+			renderer.domElement.removeEventListener('touchcancel', onTouchEnd);
 		};
 	});
 
