@@ -14,7 +14,11 @@
 		Clock,
 		EdgesGeometry,
 		LineDashedMaterial,
-		LineSegments
+		LineSegments,
+		BufferGeometry,
+		PointsMaterial,
+		Points,
+		Float32BufferAttribute
 	} from 'three';
 	import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 	import { Group } from 'three';
@@ -37,6 +41,8 @@
 	let lampCubeMaterial;
 	let edgesGeometry;
 	let outlineMaterial;
+	let orbitalPointGeometry;
+	let orbitalPointMaterial;
 	let rafId; // Pour stocker l'ID de requestAnimationFrame
 
 	onMount(async () => {
@@ -98,6 +104,13 @@
 		orbitGroup.add(iridescentCube);
 
 		function checkCubeMatch() {
+			// Fonction pour normaliser une différence d'angle entre -π et π
+			function normalizeAngleDiff(angle) {
+				while (angle > Math.PI) angle -= 2 * Math.PI;
+				while (angle < -Math.PI) angle += 2 * Math.PI;
+				return angle;
+			}
+
 			// Marge de tolérance pour la position et la rotation
 			const positionTolerance = 0.1; // Tolérance pour les positions
 			const rotationTolerance = 0.1; // Tolérance pour les rotations (en radians)
@@ -108,13 +121,13 @@
 				Math.abs(rootGroup.position.y - linedCube.position.y) < positionTolerance &&
 				Math.abs(rootGroup.position.z - linedCube.position.z) < positionTolerance;
 
-			// Calcul de rotationMatch
+			// Calcul de rotationMatch - avec normalisation modulo 2π
 			const rotationMatch =
-				Math.abs(Math.abs(rootGroup.rotation.x) - Math.abs(linedCube.rotation.x)) <
+				Math.abs(normalizeAngleDiff(rootGroup.rotation.x - linedCube.rotation.x)) <
 					rotationTolerance &&
-				Math.abs(Math.abs(rootGroup.rotation.y) - Math.abs(linedCube.rotation.y)) <
+				Math.abs(normalizeAngleDiff(rootGroup.rotation.y - linedCube.rotation.y)) <
 					rotationTolerance &&
-				Math.abs(Math.abs(rootGroup.rotation.z) - Math.abs(linedCube.rotation.z)) <
+				Math.abs(normalizeAngleDiff(rootGroup.rotation.z - linedCube.rotation.z)) <
 					rotationTolerance;
 
 			// Vérification du match
@@ -122,6 +135,63 @@
 				showTextInput.set(true);
 			} else {
 				showTextInput.set(false);
+			}
+		}
+
+		function checkAndSnapToTarget() {
+			// Fonction pour normaliser une différence d'angle entre -π et π
+			function normalizeAngleDiff(angle) {
+				while (angle > Math.PI) angle -= 2 * Math.PI;
+				while (angle < -Math.PI) angle += 2 * Math.PI;
+				return angle;
+			}
+
+			// Tolérances pour le snap (zone de magnétisation)
+			const snapPositionTolerance = 0.5; // Zone de snap pour la position
+			const snapRotationTolerance = 0.3; // Zone de snap pour la rotation (en radians)
+
+			// Vérifier si on est proche de la position cible
+			const positionClose =
+				Math.abs(rootGroup.position.x - linedCube.position.x) < snapPositionTolerance &&
+				Math.abs(rootGroup.position.y - linedCube.position.y) < snapPositionTolerance &&
+				Math.abs(rootGroup.position.z - linedCube.position.z) < snapPositionTolerance;
+
+			// Vérifier si on est proche de la rotation cible - avec normalisation modulo 2π
+			const rotationClose =
+				Math.abs(normalizeAngleDiff(rootGroup.rotation.x - linedCube.rotation.x)) <
+					snapRotationTolerance &&
+				Math.abs(normalizeAngleDiff(rootGroup.rotation.y - linedCube.rotation.y)) <
+					snapRotationTolerance &&
+				Math.abs(normalizeAngleDiff(rootGroup.rotation.z - linedCube.rotation.z)) <
+					snapRotationTolerance;
+
+			// Si on est proche à la fois en position ET en rotation, snapper
+			if (positionClose && rotationClose) {
+				// Snap la position exacte
+				rootGroup.position.copy(linedCube.position);
+
+				// Snap la rotation exacte (en ajustant pour le cycle 2π le plus proche)
+				rootGroup.rotation.x =
+					linedCube.rotation.x +
+					Math.round(
+						(rootGroup.rotation.x - linedCube.rotation.x) / (2 * Math.PI)
+					) *
+						2 *
+						Math.PI;
+				rootGroup.rotation.y =
+					linedCube.rotation.y +
+					Math.round(
+						(rootGroup.rotation.y - linedCube.rotation.y) / (2 * Math.PI)
+					) *
+						2 *
+						Math.PI;
+				rootGroup.rotation.z =
+					linedCube.rotation.z +
+					Math.round(
+						(rootGroup.rotation.z - linedCube.rotation.z) / (2 * Math.PI)
+					) *
+						2 *
+						Math.PI;
 			}
 		}
 
@@ -170,7 +240,7 @@
 		linedCube.computeLineDistances();
 
 		// f) Position "en bas à gauche" (ou gauche, selon tes coordonnées)
-		linedCube.position.set(10, -5, 0);
+		linedCube.position.set(8, -5, 0);
 
 		// g) Appliquer une rotation statique
 		linedCube.rotation.x = Math.PI / 4;
@@ -178,6 +248,32 @@
 
 		// h) On l'ajoute directement à la scène pour qu'il reste statique
 		scene.add(linedCube);
+
+		// ------------------------------
+		// *** Nouveau : Point orbital ***
+		// Montre où serait le lampCube si rootGroup était aligné avec linedCube
+		// ------------------------------
+
+		// a) Créer une géométrie avec un seul point
+		const orbitalPointGeometry = new BufferGeometry();
+		const positions = new Float32Array([0, 0, 0]); // Un seul point à l'origine
+		orbitalPointGeometry.setAttribute('position', new Float32BufferAttribute(positions, 3));
+
+		// b) Matériau pour le point (carré, même couleur que le cube statique)
+		const orbitalPointMaterial = new PointsMaterial({
+			color: 0xd3d3d3, // Même couleur que le cube statique
+			size: 6, // Taille du point en pixels
+			sizeAttenuation: false, // Taille constante quelle que soit la distance
+			map: null, // Pas de texture, on veut un carré
+			transparent: true,
+			opacity: 1.0
+		});
+
+		// c) Créer le Points object
+		const orbitalPoint = new Points(orbitalPointGeometry, orbitalPointMaterial);
+
+		// d) Ajouter à la scène
+		scene.add(orbitalPoint);
 
 		// 9. Clock pour l'animation (uniquement pour les objets qui bougent)
 		const clock = new Clock();
@@ -190,6 +286,8 @@
 		const orbitRadius = 1.0;
 
 		const tempWorldPos = new Vector3();
+		const tempLocalPos = new Vector3();
+		const tempMatrix = new Matrix4();
 
 		function animate() {
 			// Vérifier isVisible directement dans la boucle
@@ -209,6 +307,7 @@
 				(Math.sin(elapsedTime * pulseSpeed) * 0.5 + 0.5) * (maxOpacity - minOpacity) + minOpacity;
 
 			outlineMaterial.opacity = pulseOpacity; // Mise à jour de l'opacité
+			orbitalPointMaterial.opacity = pulseOpacity; // Même pulsation pour le point orbital
 
 			// Autres animations
 			lampCube.position.set(
@@ -218,6 +317,20 @@
 			);
 
 			pointLight.position.copy(lampCube.position);
+
+			// --- Calculer la position du point orbital ---
+			// Il doit avoir la même position locale que lampCube, 
+			// mais transformée par la position/rotation de linedCube au lieu de rootGroup
+			
+			// Copier la position locale du lampCube
+			tempLocalPos.copy(lampCube.position);
+			
+			// Créer une matrice de transformation à partir de linedCube
+			tempMatrix.makeRotationFromEuler(linedCube.rotation);
+			tempMatrix.setPosition(linedCube.position);
+			
+			// Appliquer la transformation
+			orbitalPoint.position.copy(tempLocalPos.applyMatrix4(tempMatrix));
 
 			iridescentCubeMaterial.uniforms.varyingColor.value.set(
 				Math.sin(elapsedTime * 3.5) * 0.5 + 0.5,
@@ -230,6 +343,9 @@
 
 			// Et mettre à jour l'uniform :
 			iridescentCubeMaterial.uniforms.lightPosition.value.copy(tempWorldPos);
+
+			// Vérifier et snapper si on est proche de la cible
+			checkAndSnapToTarget();
 
 			checkCubeMatch();
 
@@ -333,6 +449,12 @@
 		}
 		if (outlineMaterial) {
 			outlineMaterial.dispose();
+		}
+		if (orbitalPointGeometry) {
+			orbitalPointGeometry.dispose();
+		}
+		if (orbitalPointMaterial) {
+			orbitalPointMaterial.dispose();
 		}
 	});
 </script>
