@@ -1,5 +1,5 @@
 <script>
-	// df.svelte
+	// MagicSeed.svelte
 	import {
 		vigenereEncode,
 		getRandomOneTwoOrThreeOrFourLetters,
@@ -43,11 +43,12 @@
 		isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 	});
 
-	// Fonction pour gérer l'ouverture du lien
+	// Fonction pour gérer l'ouverture du lien dans un nouvel onglet
 	function handleLinkOpen(event, link) {
 		event.preventDefault();
-		// Ouvrir directement dans le même onglet pour éviter le blocage de pop-up
-		window.location.href = link;
+		event.stopPropagation();
+		// Ouvrir dans un nouvel onglet - ne sera pas bloqué car déclenché par une vraie interaction utilisateur
+		window.open(link, '_blank', 'noopener,noreferrer');
 	}
 
 	// Créer un tableau qui associe chaque lettre (non-espace) à son lien
