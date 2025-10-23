@@ -360,6 +360,9 @@
 		let lastY = 0;
 
 		function onPointerDown(event) {
+			// Ne pas traiter les événements pointer qui viennent du tactile
+			if (event.pointerType === 'touch') return;
+			
 			if (event.button === 2) {
 				event.preventDefault();
 			}
@@ -375,13 +378,13 @@
 		}
 
 		function onPointerMove(event) {
+			// Ne pas traiter les événements pointer qui viennent du tactile
+			if (event.pointerType === 'touch') return;
+			
 			if (isPanning) {
 				const deltaX = event.clientX - lastX;
 				const deltaY = event.clientY - lastY;
-
-				// Différencier souris et tactile
-		        const panSpeed = event.pointerType === 'touch' ? 0.03 : 0.015;
-
+				const panSpeed = 0.015;
 
 				rootGroup.position.x -= deltaX * panSpeed;
 				rootGroup.position.y -= deltaY * panSpeed;
@@ -398,6 +401,9 @@
 		}
 
 		function onPointerUp(event) {
+			// Ne pas traiter les événements pointer qui viennent du tactile
+			if (event.pointerType === 'touch') return;
+			
 			if (event.button === 0) {
 				isPanning = false;
 			} else if (event.button === 2) {
@@ -413,11 +419,12 @@
 			if (touches.length === 1) {
 				// 1 doigt = panning
 				isPanning = true;
+				isRotating = false;
 				lastX = touches[0].clientX;
 				lastY = touches[0].clientY;
 			} else if (touches.length === 2) {
 				// 2 doigts = rotation
-				isPanning = false; // Annuler le panning si on était en train
+				isPanning = false;
 				isRotating = true;
 				// Calculer le centre entre les deux doigts
 				lastX = (touches[0].clientX + touches[1].clientX) / 2;
@@ -430,11 +437,11 @@
 			const touches = event.touches;
 			
 			if (touches.length === 1 && isPanning) {
-				// Panning avec 1 doigt
+				// Panning avec 1 doigt - garder la vitesse originale
 				const deltaX = touches[0].clientX - lastX;
 				const deltaY = touches[0].clientY - lastY;
-				rootGroup.position.x -= deltaX * 2;
-				rootGroup.position.y -= deltaY * 2;
+				rootGroup.position.x -= deltaX * 0.035; // Vitesse cohérente avec la souris
+				rootGroup.position.y -= deltaY * 0.035;
 				lastX = touches[0].clientX;
 				lastY = touches[0].clientY;
 			} else if (touches.length === 2 && isRotating) {
