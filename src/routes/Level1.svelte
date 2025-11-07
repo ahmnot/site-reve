@@ -171,7 +171,7 @@
 	$: if ($isMagicSeedBloomTriggered) {
 		setTimeout(() => {
 			showNegativeCube = true;
-		}, 1000);
+		}, 2000);
 	}
 
 // Gestion de la soumission du TextInput
