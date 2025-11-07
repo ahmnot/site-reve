@@ -35,6 +35,8 @@
 
 	let container;
 	let renderer;
+	let sceneOpacity = 0;
+	let fadeInComplete = false;
 	let iridescentCubeGeometry;
 	let iridescentCubeMaterial;
 	let lampCubeGeometry;
@@ -295,6 +297,17 @@
 				rafId = requestAnimationFrame(animate);
 				return; // Ne pas render mais continuer la boucle
 			}
+
+			// Gérer le fade in
+			if (!fadeInComplete) {
+				sceneOpacity += 0.002; // Augmenter progressivement (60fps * 0.01 ≈ 1.67s)
+				if (sceneOpacity >= 1) {
+					sceneOpacity = 1;
+					fadeInComplete = true;
+				}
+				container.style.opacity = sceneOpacity;
+			}
+
 			requestAnimationFrame(animate);
 
 			const elapsedTime = clock.getElapsedTime();
