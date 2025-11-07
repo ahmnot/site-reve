@@ -21,6 +21,7 @@
 	export let oldMagicSeedWasClicked;
 
 	export let isCloudAndRainHidden = false;
+	export let isRestoringFromSession = false;
 
 	let newMagicSeedElem;
 
@@ -341,14 +342,21 @@
     let magicSeedPositionY = 0;
 
 	$: {
-    if (isCloudAndRainHidden) {
-        setTimeout(() => {
-            const elements = document.querySelectorAll('.hasToBeDestroyed');
-            elements.forEach((element) => {
-                element.remove();
-            });
-        }, 3000);
-    }
+		if (isCloudAndRainHidden && !isRestoringFromSession) {
+			// Seulement supprimer avec délai si ce n'est pas une restauration
+			setTimeout(() => {
+				const elements = document.querySelectorAll('.hasToBeDestroyed');
+				elements.forEach((element) => {
+					element.remove();
+				});
+			}, 3000);
+		} else if (isCloudAndRainHidden && isRestoringFromSession) {
+			// Supprimer immédiatement si c'est une restauration
+			const elements = document.querySelectorAll('.hasToBeDestroyed');
+			elements.forEach((element) => {
+				element.remove();
+			});
+		}
 	}
 
 	$: magicSeedBloomLeftOffset.set(-(magicSeedPositionX - (25 + innerWidth/2)));
@@ -360,7 +368,7 @@
 
 <div id="target" class:hidden={!expanded}>
 	
-	<div class:isCloudAndRainHidden>
+	<div class:isCloudAndRainHidden class:noTransition={isRestoringFromSession}>
 		<slot name="nuageSlot"></slot>
 		{#if $isRainTriggered}
 			<div class="hasToBeDestroyed">
@@ -374,7 +382,7 @@
 
 </div>
 
-<button id="boxWithAWord" on:click={toggleExpanded} class:isCloudAndRainHidden class="hasToBeDestroyed">{expanded ? 'pluie' : 'rêve'}</button>
+<button id="boxWithAWord" on:click={toggleExpanded} class:isCloudAndRainHidden class:noTransition={isRestoringFromSession} class="hasToBeDestroyed">{expanded ? 'pluie' : 'rêve'}</button>
 
 <div id="newMagicSeed" >
 	<slot name="magicSeedSlot" ></slot>
@@ -442,5 +450,10 @@
 		opacity: 0;
 		transition: opacity 2s ease-in-out,
 		left 10s ease-in-out;
+	}
+
+	/* Classe pour désactiver la transition lors de la restauration */
+	.noTransition {
+		transition: none !important;
 	}
 </style>

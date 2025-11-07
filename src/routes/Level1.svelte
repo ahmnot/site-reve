@@ -1,5 +1,6 @@
 <script>
 	// Level1.svelte
+	import { onMount } from 'svelte';
 	import Tree from './tree-components/Tree.svelte';
 	import BoxWithAWordWithNuageTarget from './BoxWithAWordWithNuageTarget.svelte';
 	import Rain from './nuage-components/Rain.svelte';
@@ -20,10 +21,13 @@
 	import { showTextInput } from '../lib/textInputStore.js';
 	import TextInput from './TextInput.svelte';
 	import { showLevel2, showLevel3 } from '../lib/levelStore.js';
+	
+	// Import du store de session
+	import { sessionStore } from '../lib/sessionStore.js';
 
 	let expanded = true;
 	let isFirstClick = false;
-	let oldMagicSeedWasClicked = false; // Détermine si la magicSeed a déjà été cliquée
+	let oldMagicSeedWasClicked = false;
 
 	// GROWTH TRIGGERING LOGIC
 	let isFirstBranchGrowing = false;
@@ -47,6 +51,17 @@
 	});
 
 	let isCloudAndRainHidden = false;
+	let isRestoringFromSession = false; // Pour savoir si on restaure depuis une session
+
+	// Charger la session AVANT le montage pour éviter le fade out
+	const savedSession = sessionStore.loadSession();
+	if (savedSession) {
+		// Restaurer les états depuis la session
+		isCloudAndRainHidden = savedSession.isCloudAndRainHidden;
+		isFirstBranchGrowing = savedSession.isFirstBranchGrowing;
+		isRestoringFromSession = true;
+		console.log('Session restaurée:', savedSession);
+	}
 
 	isRainTriggered.subscribe((value) => {
 		if (value) {
@@ -63,6 +78,9 @@
 							clearInterval(rainInterval);
 							rainInterval = null;
 							isCloudAndRainHidden = true;
+							
+							// Sauvegarder l'état dans la session
+							sessionStore.saveSession(true, true);
 						}
 					}
 				}, 100);
@@ -83,7 +101,7 @@
 		}
 	}
 
-	// Lors d'un redimensionnement, on régénère l’arbre **seulement si la magicSeed n’a pas été cliquée**
+	// Lors d'un redimensionnement, on régénère l'arbre **seulement si la magicSeed n'a pas été cliquée**
 	$: if (!oldMagicSeedWasClicked && innerHeight) {
 		resetBranchGeneration();
 		// Calcul des paramètres basés sur l'innerHeight
@@ -115,7 +133,7 @@
 		});
 	}
 
-	// Paramètres pour l’arbre
+	// Paramètres pour l'arbre
 	let innerHeight = 0;
 	let trunkNumberOfBranches = 0;
 	let mainBranchAngleDecrementFactor = 0.75;
@@ -135,7 +153,7 @@
 		isWindy: true,
 	};
 
-	// Génération initiale de l’arbre (se déclenche uniquement si la magicSeed n’a pas encore été cliquée)
+	// Génération initiale de l'arbre (se déclenche uniquement si la magicSeed n'a pas encore été cliquée)
 	let allTheBranches;
 	if (!oldMagicSeedWasClicked) {
 		allTheBranches = generateBranches({
@@ -174,21 +192,21 @@
 		}, 2000);
 	}
 
-// Gestion de la soumission du TextInput
-function handleTextSubmit(e) {
-	const value = e.detail.value;
-	console.log('Texte validé :', value);
-	if (value.toUpperCase() === 'INFRAMONDE') {
-		// On met à jour le store pour afficher Level2
-		showLevel2.set(true);
-		// On cache le texte input
-		showTextInput.set(false);
-	} else if (value.toUpperCase() === 'SUPRAMONDE') {
-		showLevel3.set(true);
-		// On cache le texte input
-		showTextInput.set(false);
+	// Gestion de la soumission du TextInput
+	function handleTextSubmit(e) {
+		const value = e.detail.value;
+		console.log('Texte validé :', value);
+		if (value.toUpperCase() === 'INFRAMONDE') {
+			// On met à jour le store pour afficher Level2
+			showLevel2.set(true);
+			// On cache le texte input
+			showTextInput.set(false);
+		} else if (value.toUpperCase() === 'SUPRAMONDE') {
+			showLevel3.set(true);
+			// On cache le texte input
+			showTextInput.set(false);
+		}
 	}
-}
 </script>
 
 <svelte:window bind:innerHeight />
@@ -209,6 +227,7 @@ function handleTextSubmit(e) {
 			{toggleExpanded}
 			{oldMagicSeedWasClicked}
 			{isCloudAndRainHidden}
+			{isRestoringFromSession}
 		>
 			<Nuage slot="nuageSlot" />
 			<Rain
