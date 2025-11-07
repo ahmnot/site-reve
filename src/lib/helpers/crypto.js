@@ -44,7 +44,7 @@ const decodedText = vigenereDecode(encodedText, keyword);
 
 
 // Function to randomly choose three consecutive letters, or four with low probability
-export function getRandomOneTwoOrThreeOrFourLetters(textArray) {
+export function getRandomThreeOrFourLetters(textArray) {
   const length = textArray.length;
   const probability = Math.random();
   let selectedLetters = [];

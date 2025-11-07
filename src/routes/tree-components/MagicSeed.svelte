@@ -2,7 +2,7 @@
 	// MagicSeed.svelte
 	import {
 		vigenereEncode,
-		getRandomOneTwoOrThreeOrFourLetters,
+		getRandomThreeOrFourLetters,
 		addSpacesBetweenLetters
 	} from '../../lib/helpers/crypto.js';
 	import { onMount } from 'svelte';
@@ -33,9 +33,9 @@
 
 	onMount(() => {
 		// Split the encoded text into an array of letters
-		const mysticalText = 'SUPRAMONDE'.split('');
+		const mysticalText = 'AHMNOT'.split('');
 
-		randomMysticalText = getRandomOneTwoOrThreeOrFourLetters(mysticalText);
+		randomMysticalText = getRandomThreeOrFourLetters(mysticalText);
 
 		randomMysticalText = addSpacesBetweenLetters(randomMysticalText);
 
