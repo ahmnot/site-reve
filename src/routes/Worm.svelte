@@ -28,7 +28,7 @@
 	/** Angle d'hésitation (rad) lors du contrôle manuel */
 	export let manualHesitationAngle = 0.3;
 	/** Probabilité par frame d'apparition d'une pépite (entre 0 et 1) */
-	export let nuggetRarity = 0.001;
+	export let nuggetRarity = 0.003;
 	/** Taille des pépites (px) */
 	export let nuggetSize = 10;
 	/** Angle d'hésitation (rad) lors de l'attraction vers une pépite */
