@@ -4,13 +4,13 @@
 	import { showLevel2 } from '../lib/levelStore.js';
 
 	/** Nombre de segments du ver */
-	export let numberRectangles = 20;
+	export let numberRectangles = 2;
 	/** Longueur de chaque segment (px) */
-	export let segmentLength = 30;
+	export let segmentLength = 10;
 	/** Largeur de chaque segment (px) */
-	export let segmentWidth = 10;
+	export let segmentWidth = 5;
 	/** Vitesse de déplacement (px / frame) */
-	export let speed = 2;
+	export let speed = 0.2;
 	/** Vitesse de déplacement en mode manuel (px / frame) */
 	export let manualSpeed = 0.7;
 	/** Taux de transition de vitesse (0-1, plus élevé = transition plus rapide) */
@@ -99,7 +99,8 @@
 			x: randBetween(minX, maxX),
 			y: randBetween(minY, maxY),
 			createdAt: Date.now(),
-			isFirst: true
+			isFirst: true,
+			collected: false
 		});
 		nuggets = nuggets;
 		firstNuggetCreated = true;
@@ -108,6 +109,13 @@
 	// Réagir quand showLevel2 devient true
 	$: if ($showLevel2 && !firstNuggetCreated) {
 		createFirstNugget();
+	}
+
+	// Augmenter la rareté des pépites quand le ver atteint 10 segments
+	$: if (segments.length >= 10) {
+		nuggetRarity = 0.2;
+		speed = 2;
+		manualSpeed = 2;
 	}
 
 	// Calcule l'angle désiré en fonction des touches pressées
@@ -206,7 +214,8 @@
 				x: randBetween(minX, maxX),
 				y: randBetween(minY, maxY),
 				createdAt: now,
-				isFirst: false
+				isFirst: false,
+				collected: false
 			});
 		}
 
@@ -300,7 +309,17 @@
 			if (collisionX && collisionY) {
 				const last = segments[segments.length - 1];
 				segments.push({ x: last.x, y: last.y, angle: last.angle });
-				nuggets.splice(i, 1);
+				// Marquer la nugget comme collectée pour supprimer instantanément
+				n.collected = true;
+				nuggets = nuggets; // Forcer la réactivité
+				// Supprimer après un micro-délai pour que Svelte détecte le changement
+				setTimeout(() => {
+					const index = nuggets.findIndex(nug => nug.id === n.id);
+					if (index !== -1) {
+						nuggets.splice(index, 1);
+						nuggets = nuggets;
+					}
+				}, 0);
 			}
 		}
 
@@ -381,7 +400,7 @@
 			height={nuggetSize}
 			fill="#d4af37"
 			in:fade={{ duration: 400 }}
-			out:fade={{ duration: 400 }}
+			out:fade={{ duration: n.collected ? 0 : 400 }}
 		/>
 	{/each}
 
