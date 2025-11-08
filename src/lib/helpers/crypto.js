@@ -49,8 +49,8 @@ export function getRandomThreeOrFourLetters(textArray) {
   const probability = Math.random();
   let selectedLetters = [];
 
-  if (probability < 0.1 && length > 3) {
-    // 10% chance to show 4 letters
+  if (probability < 0.25 && length > 3) {
+    // X% chance to show 4 letters
     const startIndex = Math.floor(Math.random() * (length - 3));
     selectedLetters = [
       textArray[startIndex], 
@@ -59,7 +59,7 @@ export function getRandomThreeOrFourLetters(textArray) {
       textArray[startIndex + 3]
     ];
   } else if (length > 2) {
-    // 90% chance to show 3 letters
+    // X% chance to show 3 letters
     const startIndex = Math.floor(Math.random() * (length - 2));
     selectedLetters = [
       textArray[startIndex], 

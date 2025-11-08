@@ -300,7 +300,7 @@
 
 			// Gérer le fade in
 			if (!fadeInComplete) {
-				sceneOpacity += 0.002; // Augmenter progressivement (60fps * 0.01 ≈ 1.67s)
+				sceneOpacity += 0.0005; // Augmenter progressivement (60fps * 0.01 ≈ 1.67s)
 				if (sceneOpacity >= 1) {
 					sceneOpacity = 1;
 					fadeInComplete = true;
