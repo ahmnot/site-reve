@@ -28,7 +28,7 @@
 	/** Angle d'hésitation (rad) lors du contrôle manuel */
 	export let manualHesitationAngle = 0.3;
 	/** Probabilité par frame d'apparition d'une pépite (entre 0 et 1) */
-	export let nuggetRarity = 0.0007;
+	export let nuggetRarity = 0.001;
 	/** Taille des pépites (px) */
 	export let nuggetSize = 10;
 	/** Angle d'hésitation (rad) lors de l'attraction vers une pépite */
@@ -46,6 +46,7 @@
 	let vw, vh;
 	let rafId;
 	let firstNuggetCreated = false;
+	let colorTime = 0; // Pour animer les couleurs
 
 	// Contrôle manuel avec tracking des touches pressées
 	let pressedKeys = new Set();
@@ -54,6 +55,18 @@
 
 	// Vitesse actuelle avec interpolation
 	let currentSpeed = speed;
+
+	// Fonction pour obtenir une couleur arc-en-ciel luminescente
+	function getRainbowColor(index, total) {
+		if (total < 10) return 'plum'; // Couleur normale si moins de 10 segments
+		
+		// Créer un effet arc-en-ciel qui tourne dans le temps
+		const hue = ((colorTime + index * 360 / total) % 360);
+		const saturation = 100;
+		const lightness = 60 + Math.sin(colorTime * 0.02 + index * 0.5) * 15; // Pulsation
+		
+		return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+	}
 
 	// Initialise le ver centré et réinitialise les pépites
 	function initSegments() {
@@ -174,6 +187,9 @@
 		const maxX = vw - segmentLength / 2;
 		const minY = segmentWidth / 2;
 		const maxY = vh - segmentWidth / 2;
+
+		// Incrémenter le temps pour l'animation des couleurs
+		colorTime += 2;
 
 		// 1️⃣ Suppression des pépites expirées
 		for (let i = nuggets.length - 1; i >= 0; i--) {
@@ -335,6 +351,26 @@
 			<stop offset="0%" stop-color="white" stop-opacity="0.6" />
 			<stop offset="100%" stop-color="white" stop-opacity="0" />
 		</radialGradient>
+		
+		<!-- Filtre pour effet luminescent avec halo blanc quand le ver brille -->
+		{#if segments.length >= 10}
+			<filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+				<!-- Halo blanc externe -->
+				<feGaussianBlur in="SourceAlpha" stdDeviation="8" result="whiteBlur"/>
+				<feFlood flood-color="white" flood-opacity="0.8" result="whiteColor"/>
+				<feComposite in="whiteColor" in2="whiteBlur" operator="in" result="whiteGlow"/>
+				
+				<!-- Lueur colorée interne -->
+				<feGaussianBlur in="SourceGraphic" stdDeviation="3" result="coloredBlur"/>
+				
+				<!-- Superposition des effets -->
+				<feMerge>
+					<feMergeNode in="whiteGlow"/>
+					<feMergeNode in="coloredBlur"/>
+					<feMergeNode in="SourceGraphic"/>
+				</feMerge>
+			</filter>
+		{/if}
 	</defs>
 
 	{#each nuggets as n (n.id)}
@@ -355,7 +391,8 @@
 			y={seg.y - segmentWidth / 2}
 			width={segmentLength}
 			height={segmentWidth}
-			fill="plum"
+			fill={getRainbowColor(i, segments.length)}
+			filter={segments.length >= 2 ? 'url(#glow)' : ''}
 			transform={`rotate(${(seg.angle * 180) / Math.PI}, ${seg.x}, ${seg.y})`}
 		/>
 	{/each}
