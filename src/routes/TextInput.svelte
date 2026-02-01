@@ -1,4 +1,5 @@
 <script>
+    //TextInput.svelte
     import { createEventDispatcher } from 'svelte';
 
     const dispatch = createEventDispatcher();

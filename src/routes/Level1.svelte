@@ -1,7 +1,7 @@
 <script>
 	// Level1.svelte
 	import { onMount } from 'svelte';
-	import Tree from './tree-components/Tree.svelte';
+	import TreeWebGL from './tree-components/TreeWebGL.svelte';
 	import BoxWithAWordWithNuageTarget from './BoxWithAWordWithNuageTarget.svelte';
 	import Rain from './nuage-components/Rain.svelte';
 	import Nuage from './nuage-components/Nuage.svelte';
@@ -15,21 +15,18 @@
 		magicSeedBloomBottomOffset
 	} from '../lib/magicSeedBloomStore.js';
 
-	// Import du store pour la génération des branches
 	import { generateBranches, resetBranchGeneration } from '../lib/branchesStore.js';
 
 	import { showTextInput } from '../lib/textInputStore.js';
 	import TextInput from './TextInput.svelte';
 	import { showLevel2, showLevel3 } from '../lib/levelStore.js';
-	
-	// Import du store de session
+
 	import { sessionStore } from '../lib/sessionStore.js';
 
 	let expanded = true;
 	let isFirstClick = false;
 	let oldMagicSeedWasClicked = false;
 
-	// GROWTH TRIGGERING LOGIC
 	let isFirstBranchGrowing = false;
 	let rainCounter = 0;
 	let rainInterval;
@@ -51,12 +48,23 @@
 	});
 
 	let isCloudAndRainHidden = false;
-	let isRestoringFromSession = false; // Pour savoir si on restaure depuis une session
+	let isRestoringFromSession = false;
 
-	// Charger la session AVANT le montage pour éviter le fade out
+	let targetOffsetLeft = 0;
+	let targetOffsetTop = 0;
+
+	function updateTargetOffset() {
+		const targetElem = document.querySelector('#target');
+		if (targetElem) {
+			const rect = targetElem.getBoundingClientRect();
+			// Centrer le canvas sur le target
+			targetOffsetLeft = rect.left + rect.width / 2;
+			targetOffsetTop = rect.top + rect.height / 2;
+		}
+	}
+
 	const savedSession = sessionStore.loadSession();
 	if (savedSession) {
-		// Restaurer les états depuis la session
 		isCloudAndRainHidden = savedSession.isCloudAndRainHidden;
 		isFirstBranchGrowing = savedSession.isFirstBranchGrowing;
 		isRestoringFromSession = true;
@@ -78,8 +86,7 @@
 							clearInterval(rainInterval);
 							rainInterval = null;
 							isCloudAndRainHidden = true;
-							
-							// Sauvegarder l'état dans la session
+
 							sessionStore.saveSession(true, true);
 						}
 					}
@@ -101,10 +108,35 @@
 		}
 	}
 
-	// Lors d'un redimensionnement, on régénère l'arbre **seulement si la magicSeed n'a pas été cliquée**
-	$: if (!oldMagicSeedWasClicked && innerHeight) {
+	// Paramètres pour l'arbre
+	let innerHeight = 0;
+	let innerWidth = 0;
+	let trunkNumberOfBranches = 0;
+	let mainBranchAngleDecrementFactor = 0.75;
+	let initialBranchWidth, initialBranchLength, magicSeedBranchPosition;
+	const initialDepth = 2;
+	const subBranchesFixedParameters = {
+		branchAngleLimitation: 25,
+		initialBranchWidth: 5,
+		initialBranchLength: 20,
+		angleDecrementFactor: 0.98,
+		lengthDecrementFactor: 0.95,
+		widthDecrementFactor: 0.85,
+		leafProbability: 0.98,
+		spiralProbability: 0.05,
+		initialBranchOnBranchProbability: 0.1,
+		branchOnBranchProbabilityDecrementFactor: 0.5,
+		isWindy: true
+	};
+
+	let allTheBranches;
+
+	// Fonction pour générer l'arbre
+	function generateTree() {
+		if (oldMagicSeedWasClicked) return; // Ne pas régénérer si la seed a été cliquée
+
 		resetBranchGeneration();
-		// Calcul des paramètres basés sur l'innerHeight
+
 		trunkNumberOfBranches = innerHeight > 700 ? innerHeight / 42 : innerHeight / 30;
 		mainBranchAngleDecrementFactor = innerHeight > 700 ? 0.75 : 0.5;
 		initialBranchWidth = innerHeight / 33;
@@ -129,58 +161,17 @@
 			subBranchesFixedParameters,
 			initialDepth,
 			magicSeedBranchPosition,
-			oldMagicSeedWasClicked
+			oldMagicSeedWasClicked,
+			isWindy: true
 		});
 	}
 
-	// Paramètres pour l'arbre
-	let innerHeight = 0;
-	let trunkNumberOfBranches = 0;
-	let mainBranchAngleDecrementFactor = 0.75;
-	let initialBranchWidth, initialBranchLength, magicSeedBranchPosition;
-	const initialDepth = 2;
-	const subBranchesFixedParameters = {
-		branchAngleLimitation: 25,
-		initialBranchWidth: 5,
-		initialBranchLength: 20,
-		angleDecrementFactor: 0.98,
-		lengthDecrementFactor: 0.95,
-		widthDecrementFactor: 0.85,
-		leafProbability: 0.98,
-		spiralProbability: 0.05,
-		initialBranchOnBranchProbability: 0.1,
-		branchOnBranchProbabilityDecrementFactor: 0.5,
-		isWindy: true,
-	};
-
-	// Génération initiale de l'arbre (se déclenche uniquement si la magicSeed n'a pas encore été cliquée)
-	let allTheBranches;
-	if (!oldMagicSeedWasClicked) {
-		allTheBranches = generateBranches({
-			numberOfBranches: trunkNumberOfBranches,
-			depth: initialDepth,
-			baseId: '',
-			branchAngleLimitation: 10,
-			initialBranchAngle: 0,
-			initialBranchWidth: initialBranchWidth,
-			initialBranchLength: initialBranchLength,
-			angleDecrementFactor: mainBranchAngleDecrementFactor,
-			widthDecrementFactor: 0.9,
-			lengthDecrementFactor: 0.97,
-			leafProbability: 0.01,
-			spiralProbability: 0,
-			initialBranchOnBranchProbability: 0.05,
-			branchOnBranchProbabilityDecrementFactor: 1.6,
-			subBranchesFixedParameters,
-			initialDepth,
-			magicSeedBranchPosition,
-			oldMagicSeedWasClicked,
-			isWindy: true,
-		});
+	// Régénérer l'arbre quand la taille de la fenêtre change
+	$: if (innerHeight && innerWidth && !oldMagicSeedWasClicked) {
+		generateTree();
 	}
 
 	function handleMagicSeedClick() {
-		// Une fois la magicSeed cliquée, le booléen passe à true
 		oldMagicSeedWasClicked = true;
 	}
 
@@ -192,32 +183,40 @@
 		}, 2000);
 	}
 
-	// Gestion de la soumission du TextInput
+	// Mettre à jour l'offset au resize
+	$: if (innerHeight && innerWidth) {
+		setTimeout(() => updateTargetOffset(), 0);
+	}
+
 	function handleTextSubmit(e) {
 		const value = e.detail.value;
 		console.log('Texte validé :', value);
 		if (value.toUpperCase() === 'INFRAMONDE') {
-			// On met à jour le store pour afficher Level2
 			showLevel2.set(true);
-			// On cache le texte input
 			showTextInput.set(false);
 		} else if (value.toUpperCase() === 'SUPRAMONDE') {
 			showLevel3.set(true);
-			// On cache le texte input
 			showTextInput.set(false);
 		}
 	}
+
+	onMount(() => {
+		updateTargetOffset();
+		window.addEventListener('resize', updateTargetOffset);
+		return () => window.removeEventListener('resize', updateTargetOffset);
+	});
 </script>
 
-<svelte:window bind:innerHeight />
+<svelte:window bind:innerHeight bind:innerWidth />
 
-<div class="outer-container" on:touchstart|capture={(e) => {
-	// Si on touche l'input, laisser passer
-	if (e.target.tagName === 'INPUT') {
-		return;
-	}
-}}>
-
+<div
+	class="outer-container"
+	on:touchstart|capture={(e) => {
+		if (e.target.tagName === 'INPUT') {
+			return;
+		}
+	}}
+>
 	{#if $showTextInput}
 		<TextInput on:submit={handleTextSubmit} />
 	{/if}
@@ -238,10 +237,12 @@
 				rainGround="{treeGroundPosition}px"
 				rainColor="rgba(176, 224, 230, 0.2)"
 			/>
-			<Tree
+			<TreeWebGL
 				slot="treeSlot"
 				leftPosition="50%"
 				treeGround="{treeGroundPosition}px"
+				offsetLeft={targetOffsetLeft}
+				offsetTop={targetOffsetTop}
 				{isFirstBranchGrowing}
 				{allTheBranches}
 				on:branchMagicSeedWasClicked={handleMagicSeedClick}

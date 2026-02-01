@@ -1,0 +1,753 @@
+<!-- test-tree.html - VERSION AVEC branchesStore.js ORIGINAL -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Tree WebGL</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98D8E8 50%, #F0E68C 100%);
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        
+        #container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #canvas {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            cursor: pointer;
+        }
+        
+        #controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+        
+        #controls h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        #controls button {
+            display: block;
+            width: 100%;
+            margin: 5px 0;
+            padding: 10px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        #controls button:hover {
+            background: #45a049;
+        }
+        
+        #controls button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        #info {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .checkbox-container {
+            margin: 10px 0;
+        }
+        
+        .checkbox-container label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .checkbox-container input {
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <canvas id="canvas"></canvas>
+        
+        <div id="controls">
+            <h3>🌳 Test Arbre WebGL</h3>
+            
+            <button id="btnGrow">🌱 Faire pousser</button>
+            <button id="btnReset">🔄 Réinitialiser</button>
+            
+            <div class="checkbox-container">
+                <label>
+                    <input type="checkbox" id="chkWind" checked>
+                    💨 Vent activé
+                </label>
+            </div>
+            
+            <div class="checkbox-container">
+                <label>
+                    <input type="checkbox" id="chkDebug">
+                    🐛 Mode debug
+                </label>
+            </div>
+            
+            <div id="info">
+                <div>Branches: <span id="branchCount">0</span></div>
+                <div>FPS: <span id="fps">0</span></div>
+                <div>Clic sur graine: <span id="seedClick">Non</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // BRANCHES STORE (TON CODE ORIGINAL)
+        // ============================================
+        
+        let magicSeedGenerated = false;
+        let trunkBranchPosition = 0;
+        let magicSeedAngle = 0;
+
+        let idCounter = 0;
+        function generateUniqueId(prefix = '') {
+            idCounter += 1;
+            return `${prefix}-${idCounter}`;
+        }
+
+        function getRandomValueWithSign(valuesToPickFrom) {
+            const randomIndex = Math.floor(Math.random() * valuesToPickFrom.length);
+            const randomValue = valuesToPickFrom[randomIndex];
+            const randomSign = Math.random() < 0.5 ? -1 : 1;
+            return randomValue * randomSign;
+        }
+
+        function getRandomValue(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+
+        function generateBranches(config) {
+            const {
+                numberOfBranches,
+                depth,
+                baseId,
+                branchAngleLimitation,
+                initialBranchAngle,
+                initialBranchWidth,
+                initialBranchLength,
+                angleDecrementFactor,
+                widthDecrementFactor,
+                lengthDecrementFactor,
+                leafProbability,
+                spiralProbability,
+                initialBranchOnBranchProbability,
+                branchOnBranchProbabilityDecrementFactor,
+                subBranchesFixedParameters = {},
+                initialDepth,
+                magicSeedBranchPosition,
+                oldMagicSeedWasClicked,
+                isWindy
+            } = config;
+
+            const finalBranches = [];
+            let rotationToAdd = initialBranchAngle;
+            let currentWidth = initialBranchWidth;
+            let currentLength = initialBranchLength;
+            let currentBranchOnBranchProbability = initialBranchOnBranchProbability;
+            let inSpiralMode = false;
+            let absoluteAngle = 0;
+            let spirallingCount = 0;
+
+            let magicSeedCondition =
+                depth === initialDepth - 1 &&
+                !magicSeedGenerated &&
+                trunkBranchPosition > magicSeedBranchPosition &&
+                !oldMagicSeedWasClicked;
+
+            let parentBranch = {
+                id: generateUniqueId(baseId),
+                zIndex: magicSeedCondition ? 999 : 0,
+                width: `${currentWidth}px`,
+                length: magicSeedCondition ? '4vw' : `${currentLength}px`,
+                rotation: magicSeedCondition ? '90deg' : `${rotationToAdd}deg`,
+                color: 'tan',
+                windIntensity: `0px`,
+                swayOnHover: true,
+                childBranches: []
+            };
+
+            finalBranches.push(parentBranch);
+
+            let childBranch;
+
+            for (let i = 0; i < numberOfBranches; i++) {
+                if (depth === initialDepth) {
+                    trunkBranchPosition = i;
+                }
+
+                currentWidth *= widthDecrementFactor;
+                currentLength *= lengthDecrementFactor;
+                currentBranchOnBranchProbability *= branchOnBranchProbabilityDecrementFactor;
+
+                rotationToAdd = getRandomValueWithSign([2.8125, 5.625, 11.25]);
+
+                if (Math.abs(absoluteAngle + rotationToAdd) > branchAngleLimitation) {
+                    rotationToAdd = 0;
+                }
+
+                if (!inSpiralMode && Math.random() < spiralProbability && i < numberOfBranches - 4) {
+                    inSpiralMode = true;
+                    spirallingCount = 0;
+                }
+
+                if (inSpiralMode) {
+                    rotationToAdd = 90;
+                    spirallingCount++;
+                    if (spirallingCount >= 4) {
+                        inSpiralMode = false;
+                    }
+                } else {
+                    rotationToAdd *= angleDecrementFactor;
+                }
+
+                absoluteAngle = (absoluteAngle + rotationToAdd) % 360;
+
+                childBranch = {
+                    id: generateUniqueId(baseId),
+                    zIndex: 5,
+                    width: `${currentWidth}px`,
+                    length: `${currentLength}px`,
+                    rotation: `${rotationToAdd}deg`,
+                    color: 'tan',
+                    windIntensity: `3px`,
+                    windy: isWindy ? i % 3 === 0 : 0,
+                    childBranches: []
+                };
+
+                if (magicSeedCondition && i === numberOfBranches - 1) {
+                    childBranch.childBranches.push({
+                        id: generateUniqueId(`${childBranch.id}-seed`),
+                        zIndex: 999,
+                        width: '50px',
+                        length: '50px',
+                        rotation: absoluteAngle,
+                        magicseed: true
+                    });
+                    magicSeedGenerated = true;
+                    magicSeedAngle = absoluteAngle;
+                }
+
+                if (magicSeedCondition && i < 7) {
+                    childBranch.childBranches.push({
+                        id: generateUniqueId(`${childBranch.id}-leaf`),
+                        zIndex: 50,
+                        width: `${getRandomValue(8, 10)}px`,
+                        length: `${getRandomValue(14, 15)}px`,
+                        rotation: `${Math.random() < 0.5 ? 90 : -90}deg`,
+                        color: 'forestgreen',
+                        windIntensity: `${1 / (widthDecrementFactor * 0.95)}px`,
+                        childBranches: []
+                    });
+                }
+
+                parentBranch.childBranches.push(childBranch);
+
+                if (!magicSeedCondition && Math.random() < leafProbability) {
+                    childBranch.childBranches.push({
+                        id: generateUniqueId(`${childBranch.id}-leaf`),
+                        zIndex: 100,
+                        width: `${getRandomValue(8, 10)}px`,
+                        length: `${getRandomValue(12, 15)}px`,
+                        rotation: `${Math.random() < 0.5 ? 90 : -90}deg`,
+                        color: 'forestgreen',
+                        windIntensity: `${2 / (widthDecrementFactor * 0.95)}px`,
+                        windy: isWindy ? i % 9 === 0 : 0,
+                        childBranches: []
+                    });
+                }
+
+                const newSetOfBranchesAngle =
+                    -absoluteAngle + getRandomValueWithSign([10, 20, 45].map(a => a * angleDecrementFactor));
+
+                if (depth > 0 && Math.random() < currentBranchOnBranchProbability) {
+                    childBranch.childBranches.push(
+                        ...generateBranches({
+                            numberOfBranches: Math.floor(numberOfBranches / 1.5),
+                            depth: depth - 1,
+                            baseId: `${baseId}-${i}`,
+                            initialBranchAngle: newSetOfBranchesAngle,
+                            ...subBranchesFixedParameters,
+                            initialDepth,
+                            magicSeedBranchPosition,
+                            oldMagicSeedWasClicked
+                        })
+                    );
+                }
+
+                parentBranch = childBranch;
+            }
+
+            return finalBranches;
+        }
+
+        function resetBranchGeneration() {
+            magicSeedGenerated = false;
+            trunkBranchPosition = 0;
+            idCounter = 0;
+        }
+        
+        // ============================================
+        // WEBGL RENDERER
+        // ============================================
+        
+        const canvas = document.getElementById('canvas');
+        const gl = canvas.getContext('webgl', { 
+            alpha: true, 
+            premultipliedAlpha: false,
+            antialias: true
+        });
+        
+        if (!gl) {
+            alert('WebGL non supporté!');
+            throw new Error('WebGL non supporté');
+        }
+        
+        // Shaders
+        const vertexShaderSource = `
+            attribute vec2 a_position;
+            uniform vec2 u_resolution;
+            
+            void main() {
+                vec2 clipSpace = (a_position / u_resolution) * 2.0 - 1.0;
+                gl_Position = vec4(clipSpace * vec2(1, -1), 0.0, 1.0);
+            }
+        `;
+        
+        const fragmentShaderSource = `
+            precision mediump float;
+            uniform vec4 u_color;
+            
+            void main() {
+                gl_FragColor = u_color;
+            }
+        `;
+        
+        function createShader(gl, type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error('Erreur compilation shader:', gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+            return shader;
+        }
+        
+        function createProgram(gl, vertexShader, fragmentShader) {
+            const program = gl.createProgram();
+            gl.attachShader(program, vertexShader);
+            gl.attachShader(program, fragmentShader);
+            gl.linkProgram(program);
+            
+            if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+                console.error('Erreur link program:', gl.getProgramInfoLog(program));
+                gl.deleteProgram(program);
+                return null;
+            }
+            return program;
+        }
+        
+        const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+        const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+        const program = createProgram(gl, vertexShader, fragmentShader);
+        
+        const positionLocation = gl.getAttribLocation(program, 'a_position');
+        const resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
+        const colorLocation = gl.getUniformLocation(program, 'u_color');
+        
+        const positionBuffer = gl.createBuffer();
+        
+        // ============================================
+        // PARSER LES VALEURS CSS
+        // ============================================
+        
+        function parseCSSValue(value, contextSize = 100) {
+            if (typeof value === 'number') return value;
+            if (typeof value !== 'string') return 0;
+            
+            value = value.trim();
+            
+            if (value.endsWith('px')) {
+                return parseFloat(value);
+            } else if (value.endsWith('vw')) {
+                return (parseFloat(value) / 100) * window.innerWidth;
+            } else if (value.endsWith('vh')) {
+                return (parseFloat(value) / 100) * window.innerHeight;
+            } else if (value.endsWith('deg')) {
+                return parseFloat(value);
+            } else {
+                return parseFloat(value) || 0;
+            }
+        }
+        
+        // ============================================
+        // APLATIR LES BRANCHES
+        // ============================================
+        
+        function flattenBranches(branches, parentX = 0, parentY = 0, parentRotation = 0, depth = 0) {
+            const instances = [];
+            
+            branches.forEach((branch) => {
+                const rotation = parseCSSValue(branch.rotation);
+                const length = parseCSSValue(branch.length);
+                const width = parseCSSValue(branch.width);
+                const windIntensity = parseCSSValue(branch.windIntensity);
+                
+                const radians = ((parentRotation + rotation) * Math.PI) / 180;
+                const x = parentX;
+                const y = parentY;
+                const endX = x + Math.sin(radians) * length;
+                const endY = y - Math.cos(radians) * length;
+                
+                const instance = {
+                    id: branch.id,
+                    x, y, endX, endY,
+                    width,
+                    length,
+                    rotation: parentRotation + rotation,
+                    absoluteRotation: radians,
+                    color: branch.color || 'tan',
+                    zIndex: branch.zIndex || 0,
+                    magicseed: branch.magicseed || false,
+                    windIntensity: windIntensity,
+                    windy: branch.windy || false,
+                    swayOnHover: branch.swayOnHover || false,
+                    growing: false,
+                    growthProgress: 0,
+                    growthOrder: depth,
+                    windPhase: Math.random() * Math.PI * 2,
+                    swayProgress: 0,
+                    depth
+                };
+                
+                instances.push(instance);
+                
+                if (branch.childBranches && branch.childBranches.length > 0) {
+                    const childInstances = flattenBranches(
+                        branch.childBranches,
+                        endX, endY,
+                        instance.rotation,
+                        depth + 1
+                    );
+                    instances.push(...childInstances);
+                }
+            });
+            
+            return instances;
+        }
+        
+        // ============================================
+        // CONVERSION COULEURS
+        // ============================================
+        
+        function colorToRgba(color) {
+            const namedColors = {
+                'tan': [210/255, 180/255, 140/255, 1],
+                'forestgreen': [34/255, 139/255, 34/255, 1],
+                'thistle': [216/255, 191/255, 216/255, 1],
+                'mistyrose': [255/255, 228/255, 225/255, 1],
+                'darkgoldenrod': [184/255, 134/255, 11/255, 1]
+            };
+            
+            return namedColors[color.toLowerCase()] || [0.5, 0.5, 0.5, 1.0];
+        }
+        
+        // ============================================
+        // RENDU
+        // ============================================
+        
+        let branchInstances = [];
+        let animationFrameId;
+        let windEnabled = true;
+        let debugMode = false;
+        let lastFrameTime = performance.now();
+        let frameCount = 0;
+        let fps = 0;
+        let growthStartTime = 0;
+        let maxGrowthOrder = 0;
+        
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            gl.viewport(0, 0, canvas.width, canvas.height);
+        }
+        
+        function drawBranch(instance, time) {
+            const { x, y, endX, endY, width, color, growing, growthProgress, windIntensity, windy, windPhase, absoluteRotation } = instance;
+            
+            // Ne rien dessiner si la croissance n'a pas commencé
+            if (growing && growthProgress === 0) {
+                return;
+            }
+            
+            const currentLength = growing ? growthProgress : 1;
+            const currentEndY = y + (endY - y) * currentLength;
+            const currentEndX = x + (endX - x) * currentLength;
+            
+            let windOffsetX = 0;
+            let windOffsetY = 0;
+            
+            // Le vent s'applique seulement si la branche a poussé
+            if (windy && windIntensity > 0 && windEnabled && (!growing || growthProgress > 0)) {
+                const windAmount = Math.sin(time * 0.002 + windPhase) * windIntensity;
+                windOffsetX = windAmount * Math.sin(absoluteRotation);
+                windOffsetY = -windAmount * Math.cos(absoluteRotation);
+            }
+            
+            const halfWidth = width / 2;
+            
+            const perpX = -Math.cos(absoluteRotation);
+            const perpY = -Math.sin(absoluteRotation);
+            
+            const positions = new Float32Array([
+                // Triangle 1
+                x + perpX * halfWidth, y + perpY * halfWidth,
+                x - perpX * halfWidth, y - perpY * halfWidth,
+                currentEndX + perpX * halfWidth + windOffsetX, currentEndY + perpY * halfWidth + windOffsetY,
+                
+                // Triangle 2
+                currentEndX + perpX * halfWidth + windOffsetX, currentEndY + perpY * halfWidth + windOffsetY,
+                x - perpX * halfWidth, y - perpY * halfWidth,
+                currentEndX - perpX * halfWidth + windOffsetX, currentEndY - perpY * halfWidth + windOffsetY
+            ]);
+            
+            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+            
+            gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
+            
+            const rgbaColor = colorToRgba(color);
+            gl.uniform4fv(colorLocation, rgbaColor);
+            
+            gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(positionLocation);
+            
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+            
+            if (debugMode && instance.magicseed) {
+                gl.uniform4fv(colorLocation, [1, 0, 0, 1]);
+                const debugSize = 10;
+                const debugPositions = new Float32Array([
+                    currentEndX - debugSize, currentEndY - debugSize,
+                    currentEndX + debugSize, currentEndY - debugSize,
+                    currentEndX - debugSize, currentEndY + debugSize,
+                    currentEndX - debugSize, currentEndY + debugSize,
+                    currentEndX + debugSize, currentEndY - debugSize,
+                    currentEndX + debugSize, currentEndY + debugSize
+                ]);
+                gl.bufferData(gl.ARRAY_BUFFER, debugPositions, gl.STATIC_DRAW);
+                gl.drawArrays(gl.TRIANGLES, 0, 6);
+            }
+        }
+        
+        function render(time) {
+            frameCount++;
+            if (time - lastFrameTime >= 1000) {
+                fps = frameCount;
+                frameCount = 0;
+                lastFrameTime = time;
+                document.getElementById('fps').textContent = fps;
+            }
+            
+            gl.clearColor(0, 0, 0, 0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            
+            gl.enable(gl.BLEND);
+            gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+            
+            gl.useProgram(program);
+            
+            const sorted = [...branchInstances].sort((a, b) => a.zIndex - b.zIndex);
+            
+            sorted.forEach(instance => {
+                if (instance.growing && instance.growthProgress < 1) {
+                    const timeSinceStart = time - growthStartTime;
+                    const delayPerLevel = 50;
+                    const growthDuration = 50;
+                    const startTime = instance.growthOrder * delayPerLevel;
+                    const endTime = startTime + growthDuration;
+                    
+                    if (timeSinceStart >= startTime) {
+                        const localProgress = Math.min(1, (timeSinceStart - startTime) / growthDuration);
+                        instance.growthProgress = localProgress;
+                    } else {
+                        instance.growthProgress = 0;
+                    }
+                }
+                
+                if (!instance.magicseed) {
+                    drawBranch(instance, time);
+                }
+            });
+            
+            animationFrameId = requestAnimationFrame(render);
+        }
+        
+        // ============================================
+        // INTERACTION
+        // ============================================
+        
+        let seedClicked = false;
+        
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const magicSeed = branchInstances.find(b => {
+                if (!b.magicseed) return false;
+                
+                const dx = Math.abs(b.endX - x);
+                const dy = Math.abs(b.endY - y);
+                return dx < 25 && dy < 25;
+            });
+            
+            if (magicSeed && !seedClicked) {
+                seedClicked = true;
+                document.getElementById('seedClick').textContent = 'Oui! ✅';
+                console.log('Magic seed cliquée!', magicSeed);
+            }
+        });
+        
+        // ============================================
+        // CONTRÔLES
+        // ============================================
+        
+        function initTree() {
+            resetBranchGeneration();
+            
+            const innerHeight = window.innerHeight;
+            const trunkNumberOfBranches = innerHeight > 700 ? innerHeight / 42 : innerHeight / 30;
+            const mainBranchAngleDecrementFactor = innerHeight > 700 ? 0.75 : 0.5;
+            const initialBranchWidth = innerHeight / 33;
+            const initialBranchLength = initialBranchWidth;
+            const magicSeedBranchPosition = (2 * trunkNumberOfBranches) / 3 - 2;
+            const initialDepth = 2;
+            
+            const subBranchesFixedParameters = {
+                branchAngleLimitation: 25,
+                initialBranchWidth: 5,
+                initialBranchLength: 20,
+                angleDecrementFactor: 0.98,
+                lengthDecrementFactor: 0.95,
+                widthDecrementFactor: 0.85,
+                leafProbability: 0.98,
+                spiralProbability: 0.05,
+                initialBranchOnBranchProbability: 0.1,
+                branchOnBranchProbabilityDecrementFactor: 0.5,
+                isWindy: true,
+            };
+            
+            const allTheBranches = generateBranches({
+                numberOfBranches: trunkNumberOfBranches,
+                depth: initialDepth,
+                baseId: '',
+                branchAngleLimitation: 10,
+                initialBranchAngle: 0,
+                initialBranchWidth: initialBranchWidth,
+                initialBranchLength: initialBranchLength,
+                angleDecrementFactor: mainBranchAngleDecrementFactor,
+                widthDecrementFactor: 0.9,
+                lengthDecrementFactor: 0.97,
+                leafProbability: 0.01,
+                spiralProbability: 0,
+                initialBranchOnBranchProbability: 0.05,
+                branchOnBranchProbabilityDecrementFactor: 1.6,
+                subBranchesFixedParameters,
+                initialDepth,
+                magicSeedBranchPosition,
+                oldMagicSeedWasClicked: false,
+                isWindy: true,
+            });
+            
+            const startX = canvas.width / 2;
+            const startY = canvas.height;
+            
+            branchInstances = flattenBranches(allTheBranches, startX, startY, 0, 0);
+            
+            maxGrowthOrder = Math.max(...branchInstances.map(b => b.growthOrder));
+            
+            document.getElementById('branchCount').textContent = branchInstances.length;
+            console.log('Arbre généré:', branchInstances.length, 'branches', 'profondeur max:', maxGrowthOrder);
+        }
+        
+        document.getElementById('btnGrow').addEventListener('click', () => {
+            growthStartTime = performance.now();
+            branchInstances.forEach(instance => {
+                instance.growing = true;
+                instance.growthProgress = 0;
+            });
+            document.getElementById('btnGrow').disabled = true;
+            setTimeout(() => {
+                document.getElementById('btnGrow').disabled = false;
+            }, maxGrowthOrder * 50 + 100);
+        });
+        
+        document.getElementById('btnReset').addEventListener('click', () => {
+            seedClicked = false;
+            document.getElementById('seedClick').textContent = 'Non';
+            initTree();
+        });
+        
+        document.getElementById('chkWind').addEventListener('change', (e) => {
+            windEnabled = e.target.checked;
+        });
+        
+        document.getElementById('chkDebug').addEventListener('change', (e) => {
+            debugMode = e.target.checked;
+        });
+        
+        // ============================================
+        // INIT
+        // ============================================
+        
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            initTree();
+        });
+        
+        resizeCanvas();
+        initTree();
+        animationFrameId = requestAnimationFrame(render);
+    </script>
+</body>
+</html>

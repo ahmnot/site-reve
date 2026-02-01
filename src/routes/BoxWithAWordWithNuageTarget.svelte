@@ -8,7 +8,6 @@
 	let oldMagicSeedPosition;
 	let isMobile;
 
-	// Subscribe to the store to get the position
 	magicSeedPositionWritable.subscribe((value) => {
 		oldMagicSeedPosition = value;
 	});
@@ -17,14 +16,11 @@
 
 	export let expanded;
 	export let toggleExpanded;
-
 	export let oldMagicSeedWasClicked;
-
 	export let isCloudAndRainHidden = false;
 	export let isRestoringFromSession = false;
 
 	let newMagicSeedElem;
-
 	let boxWithAWord;
 	let newMagicSeed;
 	let isGrabbing = false;
@@ -41,7 +37,6 @@
 	}
 
 	let timeSinceNewMagicSeedVisible = 0;
-
 	let growthTimeout;
 
 	$: innerWidth = 0;
@@ -49,7 +44,6 @@
 
 	onMount(() => {
 		let isPhysicsActive = true;
-
 		isMobile = /iPhone|iPad|iPod|Android/i.test(window.navigator.userAgent);
 
 		engine = Matter.Engine.create();
@@ -63,8 +57,8 @@
 			50,
 			{
 				collisionFilter: {
-					category: 0x0002, // This is a unique category for the magic seed
-					mask: 0x0001 // This ensures it won't be grabbed by the mouseConstraint
+					category: 0x0002,
+					mask: 0x0001
 				}
 			}
 		);
@@ -106,7 +100,7 @@
 				stiffness: 0.8
 			},
 			collisionFilter: {
-				mask: 0x0001 // Exclude the magic seed from the mouse interaction
+				mask: 0x0001
 			}
 		});
 
@@ -147,8 +141,6 @@
 		};
 
 		newMagicSeed.body.frictionAir = 0.02;
-
-		// Make the newMagicSeed lighter
 		Matter.Body.setDensity(newMagicSeed.body, 0.001);
 
 		const updateBoundaries = () => {
@@ -214,10 +206,8 @@
 				isRainTriggered.set(false);
 			}
 
-			// Increase the angular velocity over time
 			if (!(magicSeedHasHitGround || magicSeedHasBeenGrabbed) && newMagicSeed && !newMagicSeed.body.isStatic) {
 					const currentAngularVelocity = newMagicSeed.body.angularVelocity;
-					// This is for the "falling in the wind" animation
 					if (timeSinceNewMagicSeedVisible <= 50) {
 						Matter.Body.setAngularVelocity(newMagicSeed.body, currentAngularVelocity + 0.0005);
 					}
@@ -232,14 +222,12 @@
 
 			}
 
-			// Update the X position of newMagicSeed
 			magicSeedPositionX = newMagicSeed.body.position.x;
 			magicSeedPositionY = newMagicSeed.body.position.y;
 
 			boxWithAWord.render();
 			newMagicSeed.render();
 
-            // Update Matter seulement si actif
             if (isPhysicsActive) {
                 Matter.Engine.update(engine);
             }
@@ -276,7 +264,6 @@
 			document.addEventListener('mouseup', handleMouseUp);
 		});
 
-		// What happens when the magic seed hits the ground
 		Matter.Events.on(engine, 'collisionStart', function (event) {
 			event.pairs.forEach((pair) => {
 				const { bodyA, bodyB } = pair;
@@ -286,36 +273,23 @@
 				) {
 					magicSeedHasHitGround = true;
 
-					// Annule tout délai de croissance précédent si la graine touche à nouveau le sol
 					if (growthTimeout) {
 						clearTimeout(growthTimeout);
 					}
 
-					// Définir un délai avant de commencer la croissance
 					growthTimeout = setTimeout(() => {
-
-						// Correct the angle before blooming
 						const currentAngle = newMagicSeed.body.angle;
 						if (currentAngle !== 0) {
-							// Adjust the angle to ensure the seed is upright
 							Matter.Body.setAngle(newMagicSeed.body, 0);
 							newMagicSeedElem.style.transform = `rotate(0rad)`;
 						}
 
-						// Correct the offset before blooming
 						magicSeedBloomLeftOffset.set(-(magicSeedPositionX - (25 + innerWidth/2)))
-
 						isMagicSeedBloomTriggered.set(true);
-
 						newMagicSeedElem.style.cursor = "default";
-
 						Matter.Body.setStatic(newMagicSeed.body, true);
-
-                        // MAINTENANT on peut arrêter la physique
 						isPhysicsActive = false;
-
-					}, 1500); // Délai avant de commencer la croissance
-
+					}, 1500);
 				}
 			});
 		});
@@ -324,12 +298,11 @@
 	$: if (oldMagicSeedWasClicked) {
 		if (oldMagicSeedPosition && newMagicSeed) {
 			const newPosition = {
-				x: oldMagicSeedPosition.left + 25, // Adjusting for the center of the seed + 10 because of animation
-				y: oldMagicSeedPosition.top + 25 // Adjusting for the center of the seed
+				x: oldMagicSeedPosition.left + 25,
+				y: oldMagicSeedPosition.top + 25
 			};
 			Matter.Body.setPosition(newMagicSeed.body, newPosition);
 
-			// Convert degrees (+ 90 because of hologram animation) to radians
 			const angleInRadians = ((oldMagicSeedPosition.angle + 90) * Math.PI) / 180;
 			Matter.Body.setAngle(newMagicSeed.body, angleInRadians);
 			Matter.Body.setStatic(newMagicSeed.body, false);
@@ -343,7 +316,6 @@
 
 	$: {
 		if (isCloudAndRainHidden && !isRestoringFromSession) {
-			// Seulement supprimer avec délai si ce n'est pas une restauration
 			setTimeout(() => {
 				const elements = document.querySelectorAll('.hasToBeDestroyed');
 				elements.forEach((element) => {
@@ -351,7 +323,6 @@
 				});
 			}, 3000);
 		} else if (isCloudAndRainHidden && isRestoringFromSession) {
-			// Supprimer immédiatement si c'est une restauration
 			const elements = document.querySelectorAll('.hasToBeDestroyed');
 			elements.forEach((element) => {
 				element.remove();
@@ -367,7 +338,6 @@
 <svelte:window bind:innerWidth bind:innerHeight />
 
 <div id="target" class:hidden={!expanded}>
-	
 	<div class:isCloudAndRainHidden class:noTransition={isRestoringFromSession}>
 		<slot name="nuageSlot"></slot>
 		{#if $isRainTriggered}
@@ -375,12 +345,11 @@
 				<slot name="appearsWhenBoxInNuage"></slot>
 			</div>
 		{/if}
-		
 	</div>
-	<!-- slot for the tree -->
-	<slot name="treeSlot"></slot>
-
 </div>
+
+<!-- TREE EN DEHORS DE #target -->
+<slot name="treeSlot"></slot>
 
 <button id="boxWithAWord" on:click={toggleExpanded} class:isCloudAndRainHidden class:noTransition={isRestoringFromSession} class="hasToBeDestroyed">{expanded ? 'pluie' : 'rêve'}</button>
 
@@ -452,7 +421,6 @@
 		left 10s ease-in-out;
 	}
 
-	/* Classe pour désactiver la transition lors de la restauration */
 	.noTransition {
 		transition: none !important;
 	}
