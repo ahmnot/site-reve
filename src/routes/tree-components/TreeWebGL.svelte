@@ -1,293 +1,315 @@
 <script>
-	// TreeWebGL.svelte
+	//TreeWebGL.svelte
 	import { onMount, onDestroy } from 'svelte';
 	import { createEventDispatcher } from 'svelte';
 	import { magicSeedPositionWritable } from '../../lib/magicSeedPositionStore.js';
-	import { generateBranches, resetBranchGeneration } from '../../lib/branchesStore.js';
+	import { shouldFadeOutWebGLSeed } from '../../lib/magicSeedFadeStore.js';
+	import { physicsSyncStore } from '../../lib/physicsSyncStore.js';
 
 	export let treeGround = '0';
 	export let leftPosition = '50%';
 	export let isFirstBranchGrowing = false;
 	export let allTheBranches = [];
-	export let offsetLeft = 0; // NOUVEAU
-	export let offsetTop = 0; // NOUVEAU
+	export let offsetLeft = 0;
+	export let offsetTop = 0;
+
+	let fadeStartTime = null;
+	shouldFadeOutWebGLSeed.subscribe((value) => {
+		if (value) {
+			fadingOut = true;
+			fadeStartTime = null;
+		}
+	});
 
 	const dispatch = createEventDispatcher();
 
-	let canvas;
-	let containerDiv;
-	let gl;
-	let program;
-	let positionLocation;
-	let resolutionLocation;
-	let colorLocation;
-	let positionBuffer;
-	let animationFrameId;
+	// WebGL state
+	let canvas, containerDiv, gl, program, magicSeedProgram;
+	let positionBuffer, animationFrameId;
+
+	// Program locations - cached
+	let loc = {
+		position: null,
+		resolution: null,
+		color: null,
+		ms_position: null,
+		ms_resolution: null,
+		ms_time: null,
+		ms_seedPosition: null,
+		ms_seedSize: null,
+		ms_opacity: null,
+		ms_rotation: null
+	};
+
+	// Branch state
 	let branchInstances = [];
 	let growthStartTime = 0;
 	let maxGrowthOrder = 0;
 	let clickedMagicSeed = null;
+	let magicSeedOpacity = 1.0;
+	let fadingOut = false;
+	let dpr = 1;
 
-	// ============================================
-	// SHADERS
-	// ============================================
+	// Constants
+	const NAMED_COLORS = {
+		tan: [0.824, 0.706, 0.549, 1],
+		forestgreen: [0.133, 0.545, 0.133, 1],
+		thistle: [0.847, 0.749, 0.847, 1],
+		mistyrose: [1, 0.894, 0.882, 1],
+		darkgoldenrod: [0.722, 0.525, 0.043, 1]
+	};
 
-	const vertexShaderSource = `
-		attribute vec2 a_position;
-		uniform vec2 u_resolution;
-		
-		void main() {
-			vec2 clipSpace = (a_position / u_resolution) * 2.0 - 1.0;
-			gl_Position = vec4(clipSpace * vec2(1, -1), 0.0, 1.0);
-		}
-	`;
+	const DELAY_PER_LEVEL = 50;
+	const GROWTH_DURATION = 50;
+	const MAGIC_SEED_SIZE = 50;
 
-	const fragmentShaderSource = `
-		precision mediump float;
-		uniform vec4 u_color;
-		
-		void main() {
-			gl_FragColor = u_color;
-		}
-	`;
+	// Shaders
+	const SHADERS = {
+		vertex: `#version 300 es
+        in vec2 a_position;
+        uniform vec2 u_resolution;
+        void main() {
+            vec2 clipSpace = (a_position / u_resolution) * 2.0 - 1.0;
+            gl_Position = vec4(clipSpace * vec2(1, -1), 0.0, 1.0);
+        }
+    `,
+		fragment: `#version 300 es
+        precision mediump float;
+        uniform vec4 u_color;
+        out vec4 outColor;
+        void main() {
+            outColor = u_color;
+        }
+    `,
+		msVertex: `#version 300 es
+    precision mediump float;
+    in vec2 a_position;
+    uniform vec2 u_resolution;
+    uniform vec2 u_seedPosition;
+    uniform vec2 u_seedSize;
+    uniform float u_rotation;
+    out vec2 v_uv;
+    out float v_rotation;
+    void main() {
+        vec2 clipSpace = (a_position / u_resolution) * 2.0 - 1.0;
+        gl_Position = vec4(clipSpace * vec2(1, -1), 0.0, 1.0);
+        
+        // Calculer les UVs en object space (0 à 1 sur le carré)
+        v_uv = (a_position - u_seedPosition) / u_seedSize;
+        v_rotation = u_rotation;
+    }
+`,
+		msFragment: `#version 300 es
+    precision mediump float;
+    in vec2 v_uv;
+    in float v_rotation;
+    uniform float u_time;
+    uniform vec2 u_seedPosition;
+    uniform vec2 u_seedSize;
+    uniform vec2 u_resolution;
+    uniform float u_opacity;
+    out vec4 outColor;
+    
+    vec3 hsl2rgb(vec3 c) {
+        vec3 rgb = clamp(abs(mod(c.x * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
+        return c.z + c.y * (rgb - 0.5) * (1.0 - abs(2.0 * c.z - 1.0));
+    }
+    
+    float noise(vec2 p) {
+        return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+    }
+    
+    float smoothNoise(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        f = f * f * (3.0 - 2.0 * f);
+        
+        float a = noise(i);
+        float b = noise(i + vec2(1.0, 0.0));
+        float c = noise(i + vec2(0.0, 1.0));
+        float d = noise(i + vec2(1.0, 1.0));
+        
+        return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+    }
+    
+    vec3 getGradientColor(float t) {
+        t = fract(t);
+        float colorIndex = t * 6.0;
+        float blend = fract(colorIndex);
+        blend = blend * blend * (3.0 - 2.0 * blend);
+        
+        vec3 color1, color2;
+        float idx = floor(colorIndex);
+        
+        if (idx < 1.0) {
+            color1 = vec3(2.0/360.0, 1.0, 0.73);
+            color2 = vec3(53.0/360.0, 1.0, 0.69);
+        } else if (idx < 2.0) {
+            color1 = vec3(53.0/360.0, 1.0, 0.69);
+            color2 = vec3(93.0/360.0, 1.0, 0.69);
+        } else if (idx < 3.0) {
+            color1 = vec3(93.0/360.0, 1.0, 0.69);
+            color2 = vec3(176.0/360.0, 1.0, 0.76);
+        } else if (idx < 4.0) {
+            color1 = vec3(176.0/360.0, 1.0, 0.76);
+            color2 = vec3(228.0/360.0, 1.0, 0.74);
+        } else if (idx < 5.0) {
+            color1 = vec3(228.0/360.0, 1.0, 0.74);
+            color2 = vec3(283.0/360.0, 1.0, 0.73);
+        } else {
+            color1 = vec3(283.0/360.0, 1.0, 0.73);
+            color2 = vec3(2.0/360.0, 1.0, 0.73);
+        }
+        
+        vec3 hslColor = mix(color1, color2, blend);
+        return hsl2rgb(hslColor);
+    }
+    
+    // Fonction de rotation 2D
+    vec2 rotate2D(vec2 v, float angle) {
+        float s = sin(angle);
+        float c = cos(angle);
+        return vec2(v.x * c - v.y * s, v.x * s + v.y * c);
+    }
+    
+    void main() {
+        // Centrer les UVs : va de -0.5 à 0.5
+        vec2 centeredUV = v_uv - 0.5;
+        
+        // Appliquer la rotation INVERSE pour que le contenu tourne avec le carré
+        vec2 rotatedUV = rotate2D(centeredUV, -v_rotation);
+        
+        // Normaliser pour le gradient : va de -1 à 1
+        vec2 localPos = rotatedUV * 2.0;
+        
+        float angle = radians(135.0);
+        vec2 gradientDir = vec2(cos(angle), sin(angle));
+        float gradientPos = dot(localPos, gradientDir);
+        gradientPos = gradientPos / 10.0;
+        
+        float t = fract(u_time * 0.0005);
+        float oscillation = sin(u_time * 0.0005) * 0.15;
 
-	const magicSeedVertexShaderSource = `
-	precision mediump float;  // AJOUTER CETTE LIGNE
-	attribute vec2 a_position;
-	uniform vec2 u_resolution;
-	varying vec2 v_uv;
-	
-	void main() {
-		vec2 clipSpace = (a_position / u_resolution) * 2.0 - 1.0;
-		gl_Position = vec4(clipSpace * vec2(1, -1), 0.0, 1.0);
-		
-		// Calculer les coordonnées UV (0 à 1)
-		v_uv = a_position / u_resolution;
-	}
-`;
+        vec2 noiseCoord = localPos * 6.0 + u_time * 0.0001;
+        float noiseValue = smoothNoise(noiseCoord);
+        
+        float noiseAmount = 0.03;
+        gradientPos += (noiseValue - 0.5) * noiseAmount;
 
-	const magicSeedFragmentShaderSource = `
-	precision mediump float;
-	varying vec2 v_uv;
-	uniform float u_time;
-	uniform vec2 u_seedPosition;
-	uniform vec2 u_seedSize;
-	uniform vec2 u_resolution;
-	
-	// Convertir HSL en RGB
-	vec3 hsl2rgb(vec3 c) {
-		vec3 rgb = clamp(abs(mod(c.x * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
-		return c.z + c.y * (rgb - 0.5) * (1.0 - abs(2.0 * c.z - 1.0));
-	}
-	
-	// Fonction pour obtenir une couleur du gradient
-	vec3 getGradientColor(float t) {
-		t = fract(t);
-		
-		float colorIndex = t * 6.0;
-		float blend = fract(colorIndex);
-		
-		// Ease-in-out
-		blend = blend * blend * (3.0 - 2.0 * blend);
-		
-		vec3 color1, color2;
-		float idx = floor(colorIndex);
-		
-		if (idx < 1.0) {
-			color1 = vec3(2.0/360.0, 1.0, 0.73);
-			color2 = vec3(53.0/360.0, 1.0, 0.69);
-		} else if (idx < 2.0) {
-			color1 = vec3(53.0/360.0, 1.0, 0.69);
-			color2 = vec3(93.0/360.0, 1.0, 0.69);
-		} else if (idx < 3.0) {
-			color1 = vec3(93.0/360.0, 1.0, 0.69);
-			color2 = vec3(176.0/360.0, 1.0, 0.76);
-		} else if (idx < 4.0) {
-			color1 = vec3(176.0/360.0, 1.0, 0.76);
-			color2 = vec3(228.0/360.0, 1.0, 0.74);
-		} else if (idx < 5.0) {
-			color1 = vec3(228.0/360.0, 1.0, 0.74);
-			color2 = vec3(283.0/360.0, 1.0, 0.73);
-		} else {
-			color1 = vec3(283.0/360.0, 1.0, 0.73);
-			color2 = vec3(2.0/360.0, 1.0, 0.73);
-		}
-		
-		vec3 hslColor = mix(color1, color2, blend);
-		return hsl2rgb(hslColor);
-	}
-	
-	void main() {
-		// IMPORTANT : Utiliser gl_FragCoord directement (position absolue dans le canvas)
-		// au lieu de seedUV (position relative à la seed)
-		// Cela simule le background-size: 400% 400%
-		
-		// Angle de 135 degrés = direction du gradient
-		float angle = radians(135.0);
-		vec2 gradientDir = vec2(cos(angle), sin(angle));
-		
-		// Position absolue dans le canvas (normalisée)
-		vec2 absolutePos = gl_FragCoord.xy / u_resolution;
-		
-		// Position sur le gradient
-		// Multiplier par 0.25 pour simuler background-size: 400%
-		float gradientPos = dot(absolutePos, gradientDir) * 0.125;
-		
-		// Animation : décaler le gradient
-		float animOffset = u_time * 0.0001;
-		animOffset = fract(animOffset);
-		
-		// Position finale dans le gradient
-		float finalPos = gradientPos - animOffset;
-		
-		vec3 rgbColor = getGradientColor(finalPos);
-		
-		gl_FragColor = vec4(rgbColor, 1.0);
-	}
-`;
+        float finalPos = gradientPos + oscillation + 0.35;
+        
+        vec3 rgbColor = getGradientColor(finalPos);
+        outColor = vec4(rgbColor, u_opacity);
+    }
+`
+	};
 
-	// ============================================
-	// HELPERS
-	// ============================================
-
-	function createShader(gl, type, source) {
+	// Utility functions
+	const createShader = (type, source) => {
 		const shader = gl.createShader(type);
 		gl.shaderSource(shader, source);
 		gl.compileShader(shader);
-
 		if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-			console.error('Erreur compilation shader:', gl.getShaderInfoLog(shader));
+			console.error('Shader error:', gl.getShaderInfoLog(shader));
 			gl.deleteShader(shader);
 			return null;
 		}
 		return shader;
-	}
+	};
 
-	function createProgram(gl, vertexShader, fragmentShader) {
+	const createProgram = (vs, fs) => {
 		const program = gl.createProgram();
-		gl.attachShader(program, vertexShader);
-		gl.attachShader(program, fragmentShader);
+		gl.attachShader(program, vs);
+		gl.attachShader(program, fs);
 		gl.linkProgram(program);
-
 		if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-			console.error('Erreur link program:', gl.getProgramInfoLog(program));
+			console.error('Program error:', gl.getProgramInfoLog(program));
 			gl.deleteProgram(program);
 			return null;
 		}
 		return program;
-	}
+	};
 
-	function parseCSSValue(value, contextSize = 100) {
+	const parseCSSValue = (value) => {
 		if (typeof value === 'number') return value;
 		if (typeof value !== 'string') return 0;
 
 		value = value.trim();
+		const num = parseFloat(value);
 
-		if (value.endsWith('px')) {
-			return parseFloat(value);
-		} else if (value.endsWith('vw')) {
-			return (parseFloat(value) / 100) * window.innerWidth;
-		} else if (value.endsWith('vh')) {
-			return (parseFloat(value) / 100) * window.innerHeight;
-		} else if (value.endsWith('deg')) {
-			return parseFloat(value);
-		} else {
-			return parseFloat(value) || 0;
-		}
-	}
+		if (value.endsWith('vw')) return (num / 100) * window.innerWidth;
+		if (value.endsWith('vh')) return (num / 100) * window.innerHeight;
+		return num || 0;
+	};
 
-	function colorToRgba(color) {
-		const namedColors = {
-			tan: [210 / 255, 180 / 255, 140 / 255, 1],
-			forestgreen: [34 / 255, 139 / 255, 34 / 255, 1],
-			thistle: [216 / 255, 191 / 255, 216 / 255, 1],
-			mistyrose: [255 / 255, 228 / 255, 225 / 255, 1],
-			darkgoldenrod: [184 / 255, 134 / 255, 11 / 255, 1]
-		};
+	const colorToRgba = (color) => NAMED_COLORS[color.toLowerCase()] || [0.5, 0.5, 0.5, 1.0];
 
-		return namedColors[color.toLowerCase()] || [0.5, 0.5, 0.5, 1.0];
-	}
-
-	// ============================================
-	// FLATTEN BRANCHES
-	// ============================================
-
+	// Branch flattening
 	function flattenBranches(branches, parentX = 0, parentY = 0, parentRotation = 0, depth = 0) {
 		const instances = [];
-		const dpr = window.devicePixelRatio || 1;
+		const PI_180 = Math.PI / 180;
 
-		branches.forEach((branch) => {
+		for (const branch of branches) {
 			const rotation = parseCSSValue(branch.rotation);
 			const length = parseCSSValue(branch.length) * dpr;
 			const width = parseCSSValue(branch.width) * dpr;
 			const windIntensity = parseCSSValue(branch.windIntensity) * dpr;
 
-			const radians = ((parentRotation + rotation) * Math.PI) / 180;
-			const x = parentX;
-			const y = parentY;
-			const endX = x + Math.sin(radians) * length;
-			const endY = y - Math.cos(radians) * length;
+			const totalRotation = parentRotation + rotation;
+			const radians = totalRotation * PI_180;
+			const sinR = Math.sin(radians);
+			const cosR = Math.cos(radians);
 
-			const instance = {
+			const endX = parentX + sinR * length;
+			const endY = parentY - cosR * length;
+
+			instances.push({
 				id: branch.id,
-				x,
-				y,
+				x: parentX,
+				y: parentY,
 				endX,
 				endY,
 				width,
 				length,
-				rotation: parentRotation + rotation,
+				rotation: totalRotation,
 				absoluteRotation: radians,
-				magicSeedRotationDegrees: branch.magicseed ? branch.rotation : 0, // NOUVEAU
+				sinR,
+				cosR,
+				magicSeedRotationDegrees: branch.magicseed ? rotation : 0,
 				color: branch.color || 'tan',
 				zIndex: branch.zIndex || 0,
 				magicseed: branch.magicseed || false,
-				windIntensity: windIntensity,
+				matterBody: branch.matterBody || null, // Référence au body Matter.js
+				windIntensity,
 				windy: branch.windy || false,
 				swayOnHover: branch.swayOnHover || false,
 				growing: false,
 				growthProgress: 0,
 				growthOrder: depth,
 				windPhase: Math.random() * Math.PI * 2,
-				swayProgress: 0,
 				depth
-			};
+			});
 
-			instances.push(instance);
-
-			if (branch.childBranches && branch.childBranches.length > 0) {
-				const childInstances = flattenBranches(
-					branch.childBranches,
-					endX,
-					endY,
-					instance.rotation,
-					depth + 1
+			if (branch.childBranches?.length) {
+				instances.push(
+					...flattenBranches(branch.childBranches, endX, endY, totalRotation, depth + 1)
 				);
-				instances.push(...childInstances);
 			}
-		});
+		}
 
 		return instances;
 	}
 
-	// ============================================
-	// RENDERING
-	// ============================================
-
+	// Rendering
 	function resizeCanvas() {
 		if (!canvas || !containerDiv) return;
 
-		// Prendre en compte le devicePixelRatio pour les écrans haute densité
-		const dpr = window.devicePixelRatio || 1;
-
+		dpr = window.devicePixelRatio || 1;
 		const width = window.innerWidth;
 		const height = window.innerHeight;
 
-		// Taille d'affichage CSS (normale)
-		canvas.style.width = width + 'px';
-		canvas.style.height = height + 'px';
-
-		// Résolution interne du canvas (multipliée par dpr)
+		canvas.style.width = `${width}px`;
+		canvas.style.height = `${height}px`;
 		canvas.width = width * dpr;
 		canvas.height = height * dpr;
 
@@ -301,19 +323,80 @@
 	}
 
 	function updateBranchPositions() {
-		if (!canvas || allTheBranches.length === 0) return;
-
-		const dpr = window.devicePixelRatio || 1;
+		if (!canvas || !allTheBranches.length) return;
 
 		const treeGroundPx = parseCSSValue(treeGround);
-		const leftPercent = parseFloat(leftPosition) / 100;
-
-		// Multiplier les positions par dpr pour correspondre à la résolution du canvas
 		const startX = offsetLeft * dpr;
 		const startY = (offsetTop + treeGroundPx) * dpr;
 
 		branchInstances = flattenBranches(allTheBranches, startX, startY, 0, 0);
 		maxGrowthOrder = Math.max(...branchInstances.map((b) => b.growthOrder));
+	}
+
+	// Reusable position array
+	const positions = new Float32Array(12);
+
+	function drawMagicSeed(instance, time) {
+		// Si la physique est active et c'est cette instance, utiliser physicsBody
+		let centerX, centerY, angle;
+
+		if (physicsActive && physicsBody && physicsBody.instance === instance) {
+			centerX = physicsBody.x; // Directement le centre
+			centerY = physicsBody.y;
+			angle = physicsBody.angle;
+		} else {
+			const size = MAGIC_SEED_SIZE * dpr;
+			const halfSize = size / 2;
+			const rotRad = (instance.magicSeedRotationDegrees * Math.PI) / 180;
+			const cos = Math.cos(rotRad);
+			const sin = Math.sin(rotRad);
+			centerX = instance.x + halfSize * (cos - sin);
+			centerY = instance.y + halfSize * (sin + cos);
+			angle = (instance.magicSeedRotationDegrees * Math.PI) / 180;
+		}
+
+		const size = MAGIC_SEED_SIZE * dpr;
+		const halfSize = size / 2;
+		const cos = Math.cos(angle);
+		const sin = Math.sin(angle);
+
+		// Compute corners autour du centre
+		const c = [
+			[centerX - halfSize * cos + halfSize * sin, centerY - halfSize * sin - halfSize * cos],
+			[centerX + halfSize * cos + halfSize * sin, centerY + halfSize * sin - halfSize * cos],
+			[centerX - halfSize * cos - halfSize * sin, centerY - halfSize * sin + halfSize * cos],
+			[centerX + halfSize * cos - halfSize * sin, centerY + halfSize * sin + halfSize * cos]
+		];
+
+		positions.set([
+			c[0][0],
+			c[0][1],
+			c[1][0],
+			c[1][1],
+			c[2][0],
+			c[2][1],
+			c[2][0],
+			c[2][1],
+			c[1][0],
+			c[1][1],
+			c[3][0],
+			c[3][1]
+		]);
+
+		gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+		gl.useProgram(magicSeedProgram);
+
+		gl.uniform2f(loc.ms_resolution, canvas.width, canvas.height);
+		gl.uniform1f(loc.ms_time, time);
+		gl.uniform2f(loc.ms_seedPosition, centerX - halfSize, centerY - halfSize);
+		gl.uniform2f(loc.ms_seedSize, size, size);
+		gl.uniform1f(loc.ms_opacity, magicSeedOpacity);
+		gl.uniform1f(loc.ms_rotation, angle);  // NOUVEAU : passer l'angle
+
+		gl.vertexAttribPointer(loc.ms_position, 2, gl.FLOAT, false, 0, 0);
+		gl.enableVertexAttribArray(loc.ms_position);
+		gl.drawArrays(gl.TRIANGLES, 0, 6);
 	}
 
 	function drawBranch(instance, time) {
@@ -329,141 +412,59 @@
 			windIntensity,
 			windy,
 			windPhase,
-			absoluteRotation,
-			magicseed,
-			magicSeedRotationDegrees
+			sinR,
+			cosR,
+			magicseed
 		} = instance;
 
-		if (growing && growthProgress === 0) {
-			return;
-		}
+		if (growing && growthProgress === 0) return;
 
-		// Ne pas dessiner la magicseed si elle a été cliquée
-		if (magicseed && clickedMagicSeed) {
-			return;
-		}
+		// CHANGEMENT ICI : Ne pas cacher la branche si c'est la MagicSeed qui a été cliquée
+		// On cache UNIQUEMENT la MagicSeed elle-même
+		if (magicseed && clickedMagicSeed) return;
 
-		// Pour la magicseed, dessiner un carré holographique avec gradient
 		if (magicseed) {
-			const dpr = window.devicePixelRatio || 1;
-			const size = 50 * dpr;
-			const halfSize = size / 2;
-
-			// Décaler le centre de la magicseed pour que son coin supérieur gauche
-			// soit à la position (x, y) qui est le bout de la branche parente
-
-			// La rotation de la magicseed
-			const rotationRadians = (magicSeedRotationDegrees * Math.PI) / 180;
-
-			// Vecteur du coin supérieur gauche au centre (avant rotation)
-			// Coin sup gauche = (-halfSize, -halfSize)
-			// Donc pour centrer le coin sup gauche à (x,y), le centre doit être décalé de (+halfSize, +halfSize)
-
-			// Appliquer la rotation à ce décalage
-			const cos = Math.cos(rotationRadians);
-			const sin = Math.sin(rotationRadians);
-
-			const offsetX = halfSize * cos - halfSize * sin;
-			const offsetY = halfSize * sin + halfSize * cos;
-
-			const centerX = x + offsetX;
-			const centerY = y + offsetY;
-
-			// Les 4 coins du carré avant rotation
-			const corners = [
-				[-halfSize, -halfSize],
-				[halfSize, -halfSize],
-				[-halfSize, halfSize],
-				[halfSize, halfSize]
-			];
-
-			// Appliquer la rotation aux coins
-			const rotatedCorners = corners.map(([cx, cy]) => {
-				return [centerX + cx * cos - cy * sin, centerY + cx * sin + cy * cos];
-			});
-
-			const positions = new Float32Array([
-				rotatedCorners[0][0],
-				rotatedCorners[0][1],
-				rotatedCorners[1][0],
-				rotatedCorners[1][1],
-				rotatedCorners[2][0],
-				rotatedCorners[2][1],
-
-				rotatedCorners[2][0],
-				rotatedCorners[2][1],
-				rotatedCorners[1][0],
-				rotatedCorners[1][1],
-				rotatedCorners[3][0],
-				rotatedCorners[3][1]
-			]);
-
-			gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-			gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
-
-			// Utiliser le programme spécial pour la magicseed
-			gl.useProgram(magicSeedProgram);
-
-			gl.uniform2f(magicSeedResolutionLocation, canvas.width, canvas.height);
-			gl.uniform1f(magicSeedTimeLocation, time);
-			gl.uniform2f(magicSeedSeedPositionLocation, endX - halfSize, endY - halfSize);
-			gl.uniform2f(magicSeedSeedSizeLocation, size, size);
-
-			gl.vertexAttribPointer(magicSeedPositionAttrLocation, 2, gl.FLOAT, false, 0, 0);
-			gl.enableVertexAttribArray(magicSeedPositionAttrLocation);
-
-			gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-			// Revenir au programme normal
-			gl.useProgram(program);
-
+			drawMagicSeed(instance, time);
 			return;
 		}
 
-		// Code existant pour les branches normales...
 		const currentLength = growing ? growthProgress : 1;
-		const currentEndY = y + (endY - y) * currentLength;
 		const currentEndX = x + (endX - x) * currentLength;
+		const currentEndY = y + (endY - y) * currentLength;
 
 		let windOffsetX = 0;
-
 		if (windy && windIntensity > 0 && (!growing || growthProgress > 0)) {
-			const windAmount = Math.sin(time * 0.002 + windPhase) * windIntensity;
-			windOffsetX = windAmount * Math.sin(absoluteRotation);
+			windOffsetX = Math.sin(time * 0.002 + windPhase) * windIntensity * sinR;
 		}
 
 		const halfWidth = width / 2;
+		const perpX = -cosR * halfWidth;
+		const perpY = -sinR * halfWidth;
 
-		const perpX = -Math.cos(absoluteRotation);
-		const perpY = -Math.sin(absoluteRotation);
-
-		const positions = new Float32Array([
-			x + perpX * halfWidth,
-			y + perpY * halfWidth,
-			x - perpX * halfWidth,
-			y - perpY * halfWidth,
-			currentEndX + perpX * halfWidth + windOffsetX,
-			currentEndY + perpY * halfWidth,
-
-			currentEndX + perpX * halfWidth + windOffsetX,
-			currentEndY + perpY * halfWidth,
-			x - perpX * halfWidth,
-			y - perpY * halfWidth,
-			currentEndX - perpX * halfWidth + windOffsetX,
-			currentEndY - perpY * halfWidth
+		positions.set([
+			x + perpX,
+			y + perpY,
+			x - perpX,
+			y - perpY,
+			currentEndX + perpX + windOffsetX,
+			currentEndY + perpY,
+			currentEndX + perpX + windOffsetX,
+			currentEndY + perpY,
+			x - perpX,
+			y - perpY,
+			currentEndX - perpX + windOffsetX,
+			currentEndY - perpY
 		]);
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 		gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+		gl.useProgram(program);
 
-		gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
+		gl.uniform2f(loc.resolution, canvas.width, canvas.height);
+		gl.uniform4fv(loc.color, colorToRgba(color));
 
-		const rgbaColor = colorToRgba(color);
-		gl.uniform4fv(colorLocation, rgbaColor);
-
-		gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
-		gl.enableVertexAttribArray(positionLocation);
-
+		gl.vertexAttribPointer(loc.position, 2, gl.FLOAT, false, 0, 0);
+		gl.enableVertexAttribArray(loc.position);
 		gl.drawArrays(gl.TRIANGLES, 0, 6);
 	}
 
@@ -473,98 +474,145 @@
 		gl.clearColor(0, 0, 0, 0);
 		gl.clear(gl.COLOR_BUFFER_BIT);
 
-		gl.enable(gl.BLEND);
-		// Changer le blending pour éviter les artefacts sur les bords
-		gl.blendFunc(gl.ONE, gl.GL_CONSTANT_COLOR); // Au lieu de gl.SRC_ALPHA
+		const timeSinceStart = time - growthStartTime;
 
-		gl.useProgram(program);
+		// SYNCHRONISER avec la physique de Matter.js depuis BoxWithAWordWithNuageTarget
+		let physicsSync;
+		physicsSyncStore.subscribe((value) => {
+			physicsSync = value;
+		})();
+
+		if (physicsSync && physicsSync.active && physicsBody) {
+			// Mettre à jour la position locale pour le rendu
+			physicsBody.x = physicsSync.x * dpr;
+			physicsBody.y = physicsSync.y * dpr;
+			physicsBody.angle = physicsSync.angle;
+
+			// Vérifier si la graine a touché le sol
+			if (physicsSync.grounded && !physicsBody.grounded) {
+				physicsBody.grounded = true;
+
+				// Attendre avant de faire disparaître
+				setTimeout(() => {
+					handleMagicSeedLanded();
+				}, 2000);
+			}
+		}
+
+		// Gérer le fondu de disparition
+		if (fadingOut) {
+			if (!fadeStartTime) {
+				fadeStartTime = time;
+			}
+
+			const fadeDuration = 1000;
+			const elapsed = time - fadeStartTime;
+
+			if (elapsed < fadeDuration) {
+				magicSeedOpacity = 1.0 - elapsed / fadeDuration;
+			} else {
+				magicSeedOpacity = 0;
+				if (!clickedMagicSeed && physicsBody) {
+					clickedMagicSeed = physicsBody.instance;
+				}
+			}
+		}
+
+		for (const instance of branchInstances) {
+			if (instance.growing && instance.growthProgress < 1) {
+				const startTime = instance.growthOrder * DELAY_PER_LEVEL;
+				instance.growthProgress =
+					timeSinceStart >= startTime
+						? Math.min(1, (timeSinceStart - startTime) / GROWTH_DURATION)
+						: 0;
+			}
+		}
 
 		const sorted = [...branchInstances].sort((a, b) => a.zIndex - b.zIndex);
 
-		sorted.forEach((instance) => {
-			if (instance.growing && instance.growthProgress < 1) {
-				const timeSinceStart = time - growthStartTime;
-				const delayPerLevel = 50;
-				const growthDuration = 50;
-				const startTime = instance.growthOrder * delayPerLevel;
-
-				if (timeSinceStart >= startTime) {
-					const localProgress = Math.min(1, (timeSinceStart - startTime) / growthDuration);
-					instance.growthProgress = localProgress;
-				} else {
-					instance.growthProgress = 0;
-				}
-			}
-
-			// Dessiner toutes les branches (magicseed incluse)
+		for (const instance of sorted) {
 			drawBranch(instance, time);
-		});
+		}
 
 		animationFrameId = requestAnimationFrame(render);
 	}
 
-	// ============================================
-	// INTERACTIONS
-	// ============================================
+	let physicsActive = false;
+	let physicsBody = null;
 
+	// Interactions
 	function handleCanvasClick(e) {
 		const rect = canvas.getBoundingClientRect();
-		const dpr = window.devicePixelRatio || 1;
 		const clickX = (e.clientX - rect.left) * dpr;
 		const clickY = (e.clientY - rect.top) * dpr;
 
-		const magicSeed = branchInstances.find((b) => {
-			if (!b.magicseed) return false;
+		for (const b of branchInstances) {
+			if (!b.magicseed) continue;
 
-			// Recalculer la position du centre de la magicseed
-			const size = 50 * dpr;
+			const size = MAGIC_SEED_SIZE * dpr;
 			const halfSize = size / 2;
-			const rotationRadians = (b.magicSeedRotationDegrees * Math.PI) / 180;
-			const cos = Math.cos(rotationRadians);
-			const sin = Math.sin(rotationRadians);
-			const offsetX = halfSize * cos - halfSize * sin;
-			const offsetY = halfSize * sin + halfSize * cos;
-			const centerX = b.x + offsetX;
-			const centerY = b.y + offsetY;
+			const rotRad = (b.magicSeedRotationDegrees * Math.PI) / 180;
+			const cos = Math.cos(rotRad);
+			const sin = Math.sin(rotRad);
+			const centerX = b.x + halfSize * (cos - sin);
+			const centerY = b.y + halfSize * (sin + cos);
 
-			const dx = Math.abs(centerX - clickX);
-			const dy = Math.abs(centerY - clickY);
-			return dx < 25 * dpr && dy < 25 * dpr;
-		});
+			if (Math.abs(centerX - clickX) < halfSize && Math.abs(centerY - clickY) < halfSize) {
+				// Calculer la position en pixels (pas en DPR)
+				const pixelX = centerX / dpr;
+				const pixelY = centerY / dpr;
+				const angleDegrees = b.magicSeedRotationDegrees;
 
-		if (magicSeed && !clickedMagicSeed) {
-			clickedMagicSeed = magicSeed;
+				// Enregistrer la position pour BoxWithAWordWithNuageTarget
+				magicSeedPositionWritable.set({
+					top: pixelY - 25,
+					left: pixelX - 25,
+					angle: angleDegrees
+				});
 
-			// Calculer la position du centre de la magicseed dans l'espace de la page
-			const size = 50 * dpr;
-			const halfSize = size / 2;
-			const rotationRadians = (magicSeed.magicSeedRotationDegrees * Math.PI) / 180;
-			const cos = Math.cos(rotationRadians);
-			const sin = Math.sin(rotationRadians);
-			const offsetX = halfSize * cos - halfSize * sin;
-			const offsetY = halfSize * sin + halfSize * cos;
+				// Activer la physique locale pour le suivi
+				physicsActive = true;
+				physicsBody = {
+					x: centerX,
+					y: centerY,
+					angle: (angleDegrees * Math.PI) / 180,
+					grounded: false,
+					instance: b
+				};
 
-			const centerX = magicSeed.x + offsetX;
-			const centerY = magicSeed.y + offsetY;
+				b.falling = true;
 
-			// Convertir en coordonnées de page
-			const pageX = rect.left + centerX / dpr;
-			const pageY = rect.top + centerY / dpr;
+				// Dispatcher l'événement pour déclencher la MagicSeed Svelte
+				dispatch('branchMagicSeedWasClicked');
 
-			magicSeedPositionWritable.set({
-				top: pageY - 25, // -25 car la magicseed DOM fait 50px et on veut centrer
-				left: pageX - 25,
-				angle: magicSeed.magicSeedRotationDegrees
-			});
-
-			dispatch('branchMagicSeedWasClicked');
+				break;
+			}
 		}
 	}
 
-	// ============================================
-	// REACTIVE STATEMENTS
-	// ============================================
+	function handleMagicSeedLanded() {
+		fadingOut = true;
+		fadeStartTime = null;
 
+		const finalX = physicsSyncStore.x;
+		const finalY = physicsSyncStore.y;
+
+		magicSeedPositionWritable.set({
+			top: finalY - 50,
+			left: finalX - 25,
+			angle: (physicsSyncStore.angle * 180) / Math.PI
+		});
+
+		dispatch('branchMagicSeedWasClicked');
+
+		setTimeout(() => {
+			clickedMagicSeed = physicsBody.instance;
+			physicsActive = false;
+			physicsBody = null;
+		}, 200);
+	}
+
+	// Reactive statements
 	$: if (isFirstBranchGrowing && branchInstances.length > 0) {
 		growthStartTime = performance.now();
 		branchInstances.forEach((instance) => {
@@ -573,7 +621,6 @@
 		});
 	}
 
-	// Recalculer quand offsetLeft ou offsetTop change
 	$: if (
 		offsetLeft !== undefined &&
 		offsetTop !== undefined &&
@@ -583,65 +630,62 @@
 		updateBranchPositions();
 	}
 
-	// ============================================
-	// LIFECYCLE
-	// ============================================
-
-	let magicSeedProgram;
-	let magicSeedTimeLocation;
-	let magicSeedPositionAttrLocation;
-	let magicSeedResolutionLocation;
-	let magicSeedSeedPositionLocation;
-	let magicSeedSeedSizeLocation;
-
+	// Lifecycle
 	onMount(() => {
-		gl = canvas.getContext('webgl', {
+		gl = canvas.getContext('webgl2', {
+			// <-- webgl2 au lieu de webgl
 			alpha: true,
-			premultipliedAlpha: false,
-			antialias: false, // DÉSACTIVER L'ANTIALIASING
+			premultipliedAlpha: true,
+			antialias: true,
 			depth: false,
 			stencil: false
 		});
 
 		if (!gl) {
-			console.error('WebGL non supporté');
-			return;
+			console.error('WebGL 2 non supporté, essai WebGL 1...');
+			// Fallback vers WebGL 1
+			gl = canvas.getContext('webgl', {
+				alpha: true,
+				premultipliedAlpha: true,
+				antialias: true,
+				depth: false,
+				stencil: false
+			});
+
+			if (!gl) {
+				console.error('WebGL non supporté');
+				return;
+			}
 		}
 
-		const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-		const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-		program = createProgram(gl, vertexShader, fragmentShader);
+		// Create programs
+		const vs = createShader(gl.VERTEX_SHADER, SHADERS.vertex);
+		const fs = createShader(gl.FRAGMENT_SHADER, SHADERS.fragment);
+		program = createProgram(vs, fs);
 
-		positionLocation = gl.getAttribLocation(program, 'a_position');
-		resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
-		colorLocation = gl.getUniformLocation(program, 'u_color');
+		const msVs = createShader(gl.VERTEX_SHADER, SHADERS.msVertex);
+		const msFs = createShader(gl.FRAGMENT_SHADER, SHADERS.msFragment);
+		magicSeedProgram = createProgram(msVs, msFs);
 
-		// Programme pour la magicseed
-		const magicSeedVertexShader = createShader(gl, gl.VERTEX_SHADER, magicSeedVertexShaderSource);
-		const magicSeedFragmentShader = createShader(
-			gl,
-			gl.FRAGMENT_SHADER,
-			magicSeedFragmentShaderSource
-		);
-		magicSeedProgram = createProgram(gl, magicSeedVertexShader, magicSeedFragmentShader);
-
-		magicSeedPositionAttrLocation = gl.getAttribLocation(magicSeedProgram, 'a_position');
-		magicSeedResolutionLocation = gl.getUniformLocation(magicSeedProgram, 'u_resolution');
-		magicSeedTimeLocation = gl.getUniformLocation(magicSeedProgram, 'u_time');
-		magicSeedSeedPositionLocation = gl.getUniformLocation(magicSeedProgram, 'u_seedPosition');
-		magicSeedSeedSizeLocation = gl.getUniformLocation(magicSeedProgram, 'u_seedSize');
+		// Cache locations
+		loc.position = gl.getAttribLocation(program, 'a_position');
+		loc.resolution = gl.getUniformLocation(program, 'u_resolution');
+		loc.color = gl.getUniformLocation(program, 'u_color');
+		loc.ms_position = gl.getAttribLocation(magicSeedProgram, 'a_position');
+		loc.ms_resolution = gl.getUniformLocation(magicSeedProgram, 'u_resolution');
+		loc.ms_time = gl.getUniformLocation(magicSeedProgram, 'u_time');
+		loc.ms_seedPosition = gl.getUniformLocation(magicSeedProgram, 'u_seedPosition');
+		loc.ms_seedSize = gl.getUniformLocation(magicSeedProgram, 'u_seedSize');
+		loc.ms_opacity = gl.getUniformLocation(magicSeedProgram, 'u_opacity');
+		loc.ms_rotation = gl.getUniformLocation(magicSeedProgram, 'u_rotation');
 
 		positionBuffer = gl.createBuffer();
 
-		gl.useProgram(program);
+		gl.enable(gl.BLEND);
+		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-		// Attendre que le DOM soit rendu et que .central.expanded existe
-		setTimeout(() => {
-			resizeCanvas();
-		}, 100);
-
+		setTimeout(resizeCanvas, 100);
 		window.addEventListener('resize', resizeCanvas);
-
 		canvas.addEventListener('click', handleCanvasClick);
 		canvas.addEventListener('touchstart', handleCanvasClick, { passive: true });
 
@@ -649,9 +693,7 @@
 	});
 
 	onDestroy(() => {
-		if (animationFrameId) {
-			cancelAnimationFrame(animationFrameId);
-		}
+		if (animationFrameId) cancelAnimationFrame(animationFrameId);
 		window.removeEventListener('resize', resizeCanvas);
 
 		if (canvas) {
@@ -661,6 +703,7 @@
 
 		if (gl) {
 			gl.deleteProgram(program);
+			gl.deleteProgram(magicSeedProgram);
 			gl.deleteBuffer(positionBuffer);
 		}
 	});
