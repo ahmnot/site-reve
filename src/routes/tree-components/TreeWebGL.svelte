@@ -12,6 +12,7 @@
 	export let allTheBranches = [];
 	export let offsetLeft = 0;
 	export let offsetTop = 0;
+	export let isRestoringFromSession = false;
 
 	let fadeStartTime = null;
 	shouldFadeOutWebGLSeed.subscribe((value) => {
@@ -88,14 +89,38 @@
     uniform vec2 u_seedPosition;
     uniform vec2 u_seedSize;
     uniform float u_rotation;
+    uniform float u_time;  // NOUVEAU : ajouter le temps
     out vec2 v_uv;
     out float v_rotation;
+    
     void main() {
-        vec2 clipSpace = (a_position / u_resolution) * 2.0 - 1.0;
+        // Calculer les UVs ORIGINAUX (sans déformation)
+        vec2 originalUV = (a_position - u_seedPosition) / u_seedSize;
+        v_uv = originalUV;
+        
+        // Position centrée (-0.5 à 0.5) pour la déformation
+        vec2 centeredPos = originalUV - 0.5;
+        
+        // Calculer la distance au centre
+        float distToCenter = length(centeredPos);
+        
+        // Effet de respiration : oscille entre 0.98 et 1.02 (amplitude de ±2%)
+        float breathingAmount = 0.03; // Ajustez entre 0.01 et 0.05
+        float breathingSpeed = 0.0015; // Vitesse de la respiration
+        float breathing = 1.0 + sin(u_time * breathingSpeed) * breathingAmount;
+        
+        // Appliquer le gonflement de façon progressive (plus fort vers les bords)
+        float inflationFactor = mix(1.0, breathing, smoothstep(0.0, 0.5, distToCenter));
+        
+        // DÉFORMER LA POSITION (pas les UVs)
+        vec2 inflatedPos = centeredPos * inflationFactor + 0.5;
+        
+        // Convertir en position écran avec la déformation appliquée
+        vec2 finalPosition = u_seedPosition + inflatedPos * u_seedSize;
+        
+        vec2 clipSpace = (finalPosition / u_resolution) * 2.0 - 1.0;
         gl_Position = vec4(clipSpace * vec2(1, -1), 0.0, 1.0);
         
-        // Calculer les UVs en object space (0 à 1 sur le carré)
-        v_uv = (a_position - u_seedPosition) / u_seedSize;
         v_rotation = u_rotation;
     }
 `,
@@ -279,12 +304,12 @@
 				color: branch.color || 'tan',
 				zIndex: branch.zIndex || 0,
 				magicseed: branch.magicseed || false,
-				matterBody: branch.matterBody || null, // Référence au body Matter.js
+				matterBody: branch.matterBody || null,
 				windIntensity,
 				windy: branch.windy || false,
 				swayOnHover: branch.swayOnHover || false,
-				growing: false,
-				growthProgress: 0,
+				growing: false, // ← Toujours false au départ
+				growthProgress: 0, // ← Toujours 0 au départ
 				growthOrder: depth,
 				windPhase: Math.random() * Math.PI * 2,
 				depth
@@ -329,33 +354,86 @@
 		const startX = offsetLeft * dpr;
 		const startY = (offsetTop + treeGroundPx) * dpr;
 
+		// NE PAS sauvegarder l'état - on veut relancer l'animation
+		// const previousState = new Map();
+		// branchInstances.forEach(instance => {
+		//     previousState.set(instance.id, {
+		//         growing: instance.growing,
+		//         growthProgress: instance.growthProgress
+		//     });
+		// });
+
 		branchInstances = flattenBranches(allTheBranches, startX, startY, 0, 0);
 		maxGrowthOrder = Math.max(...branchInstances.map((b) => b.growthOrder));
+
+		// Si isFirstBranchGrowing est true, relancer l'animation
+		if (isFirstBranchGrowing) {
+			growthStartTime = performance.now();
+			branchInstances.forEach((instance) => {
+				instance.growing = true;
+				instance.growthProgress = 0;
+			});
+		}
+
+		// NE PAS restaurer l'état
+		// branchInstances.forEach(instance => {
+		//     const saved = previousState.get(instance.id);
+		//     if (saved) {
+		//         instance.growing = saved.growing;
+		//         instance.growthProgress = saved.growthProgress;
+		//     }
+		// });
+
+		console.log('updateBranchPositions called', {
+			isFirstBranchGrowing,
+			firstBranch: branchInstances[0],
+			allTheBranchesLength: allTheBranches.length
+		});
 	}
 
 	// Reusable position array
 	const positions = new Float32Array(12);
 
 	function drawMagicSeed(instance, time) {
-		// Si la physique est active et c'est cette instance, utiliser physicsBody
+		// DEBUG: Logger la progression de la MagicSeed
+		if (instance.growthProgress > 0 && instance.growthProgress < 1) {
+			console.log('MagicSeed growing:', {
+				growthProgress: instance.growthProgress.toFixed(3),
+				growthOrder: instance.growthOrder,
+				id: instance.id
+			});
+		}
+
+		// Vérifier si en cours de croissance - cacher seulement si pas encore commencé
+		if (instance.growthProgress === 0) return;
+
+		// TOUJOURS utiliser growthProgress pour le scale (de 0 à 1)
+		const growthScale = instance.growthProgress;
+		const size = MAGIC_SEED_SIZE * dpr * growthScale;
+
 		let centerX, centerY, angle;
 
+		// Si la physique est active, utiliser physicsBody
 		if (physicsActive && physicsBody && physicsBody.instance === instance) {
-			centerX = physicsBody.x; // Directement le centre
+			centerX = physicsBody.x;
 			centerY = physicsBody.y;
 			angle = physicsBody.angle;
 		} else {
-			const size = MAGIC_SEED_SIZE * dpr;
+			// Sinon, calculer depuis le point d'attache
+			const attachX = instance.x;
+			const attachY = instance.y;
+
 			const halfSize = size / 2;
 			const rotRad = (instance.magicSeedRotationDegrees * Math.PI) / 180;
 			const cos = Math.cos(rotRad);
 			const sin = Math.sin(rotRad);
-			centerX = instance.x + halfSize * (cos - sin);
-			centerY = instance.y + halfSize * (sin + cos);
-			angle = (instance.magicSeedRotationDegrees * Math.PI) / 180;
+
+			// Le centre se déplace à mesure que la taille augmente
+			centerX = attachX + halfSize * (cos - sin);
+			centerY = attachY + halfSize * (sin + cos);
+			angle = rotRad;
 		}
 
-		const size = MAGIC_SEED_SIZE * dpr;
 		const halfSize = size / 2;
 		const cos = Math.cos(angle);
 		const sin = Math.sin(angle);
@@ -392,7 +470,7 @@
 		gl.uniform2f(loc.ms_seedPosition, centerX - halfSize, centerY - halfSize);
 		gl.uniform2f(loc.ms_seedSize, size, size);
 		gl.uniform1f(loc.ms_opacity, magicSeedOpacity);
-		gl.uniform1f(loc.ms_rotation, angle);  // NOUVEAU : passer l'angle
+		gl.uniform1f(loc.ms_rotation, angle);
 
 		gl.vertexAttribPointer(loc.ms_position, 2, gl.FLOAT, false, 0, 0);
 		gl.enableVertexAttribArray(loc.ms_position);
@@ -417,7 +495,13 @@
 			magicseed
 		} = instance;
 
-		if (growing && growthProgress === 0) return;
+		// DEBUG: Ajoutez ceci au début
+		if (!magicseed && instance.id === '0') {
+			console.log('Branch 0:', { growing, growthProgress, isFirstBranchGrowing });
+		}
+
+		// CHANGEZ CETTE LIGNE :
+		if (growthProgress === 0) return; // ← Cache si pas encore poussé
 
 		// CHANGEMENT ICI : Ne pas cacher la branche si c'est la MagicSeed qui a été cliquée
 		// On cache UNIQUEMENT la MagicSeed elle-même
@@ -521,10 +605,23 @@
 		for (const instance of branchInstances) {
 			if (instance.growing && instance.growthProgress < 1) {
 				const startTime = instance.growthOrder * DELAY_PER_LEVEL;
+
+				// NOUVEAU : durée différente pour la MagicSeed
+				const duration = instance.magicseed ? 500 : GROWTH_DURATION; // 1 seconde pour la MagicSeed vs 50ms pour les branches
+
 				instance.growthProgress =
-					timeSinceStart >= startTime
-						? Math.min(1, (timeSinceStart - startTime) / GROWTH_DURATION)
-						: 0;
+					timeSinceStart >= startTime ? Math.min(1, (timeSinceStart - startTime) / duration) : 0;
+
+				// DEBUG: Logger spécifiquement pour la MagicSeed
+				if (instance.magicseed && instance.growthProgress > 0) {
+					console.log('MagicSeed progress update:', {
+						growthProgress: instance.growthProgress.toFixed(3),
+						growthOrder: instance.growthOrder,
+						startTime,
+						timeSinceStart: timeSinceStart.toFixed(0),
+						duration // ← Afficher la durée utilisée
+					});
+				}
 			}
 		}
 
@@ -532,6 +629,61 @@
 
 		for (const instance of sorted) {
 			drawBranch(instance, time);
+		}
+
+		// DEBUG : Dessiner les coins du carré avec des couleurs différentes
+		if (physicsActive && physicsBody) {
+			// const cos = Math.cos(physicsBody.angle);
+			// const sin = Math.sin(physicsBody.angle);
+			// const halfSize = (MAGIC_SEED_SIZE * dpr) / 2;
+			// const corners = [
+			// 	{
+			// 		x: physicsBody.x - halfSize * cos + halfSize * sin,
+			// 		y: physicsBody.y - halfSize * sin - halfSize * cos,
+			// 		color: [1, 0, 0, 1] // ROUGE - Coin 0 (haut-gauche dans l'espace local)
+			// 	},
+			// 	{
+			// 		x: physicsBody.x + halfSize * cos + halfSize * sin,
+			// 		y: physicsBody.y + halfSize * sin - halfSize * cos,
+			// 		color: [0, 1, 0, 1] // VERT - Coin 1 (haut-droite dans l'espace local)
+			// 	},
+			// 	{
+			// 		x: physicsBody.x - halfSize * cos - halfSize * sin,
+			// 		y: physicsBody.y - halfSize * sin + halfSize * cos,
+			// 		color: [0, 0, 1, 1] // BLEU - Coin 2 (bas-gauche dans l'espace local)
+			// 	},
+			// 	{
+			// 		x: physicsBody.x + halfSize * cos - halfSize * sin,
+			// 		y: physicsBody.y + halfSize * sin + halfSize * cos,
+			// 		color: [1, 1, 0, 1] // JAUNE - Coin 3 (bas-droite dans l'espace local)
+			// 	}
+			// ];
+			// gl.useProgram(program);
+			// // Dessiner chaque coin avec sa couleur
+			// corners.forEach((corner) => {
+			// 	const debugSize = 8; // Augmenté pour mieux voir
+			// 	positions.set([
+			// 		corner.x - debugSize,
+			// 		corner.y - debugSize,
+			// 		corner.x + debugSize,
+			// 		corner.y - debugSize,
+			// 		corner.x - debugSize,
+			// 		corner.y + debugSize,
+			// 		corner.x - debugSize,
+			// 		corner.y + debugSize,
+			// 		corner.x + debugSize,
+			// 		corner.y - debugSize,
+			// 		corner.x + debugSize,
+			// 		corner.y + debugSize
+			// 	]);
+			// 	gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+			// 	gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+			// 	gl.uniform2f(loc.resolution, canvas.width, canvas.height);
+			// 	gl.uniform4fv(loc.color, corner.color); // Couleur spécifique à chaque coin
+			// 	gl.vertexAttribPointer(loc.position, 2, gl.FLOAT, false, 0, 0);
+			// 	gl.enableVertexAttribArray(loc.position);
+			// 	gl.drawArrays(gl.TRIANGLES, 0, 6);
+			// });
 		}
 
 		animationFrameId = requestAnimationFrame(render);
@@ -612,13 +764,18 @@
 		}, 200);
 	}
 
-	// Reactive statements
-	$: if (isFirstBranchGrowing && branchInstances.length > 0) {
+	let hasBeenInitialized = false; // ← NOUVEAU
+
+	$: if (isFirstBranchGrowing && branchInstances.length > 0 && !hasBeenInitialized) {
+		console.log('Reactive: isFirstBranchGrowing is TRUE, setting growth');
 		growthStartTime = performance.now();
 		branchInstances.forEach((instance) => {
 			instance.growing = true;
+			// TOUJOURS commencer à 0 pour l'animation, même si on restaure
 			instance.growthProgress = 0;
 		});
+
+		hasBeenInitialized = true;
 	}
 
 	$: if (

@@ -6,6 +6,7 @@
 		addSpacesBetweenLetters
 	} from '../../lib/helpers/crypto.js';
 	import { onMount } from 'svelte';
+	import { magicSeedBloomRotation } from '../../lib/magicSeedBloomStore.js'; // NOUVEAU
 
 	export let growing = false;
 	export let rotation;
@@ -18,6 +19,16 @@
 	let showMysticalScripture = false;
 	let randomMysticalText;
 	let betterViewerHeight;
+
+	// NOUVEAU : Recevoir l'angle de rotation
+	let bloomRotation = 0;
+	magicSeedBloomRotation.subscribe((value) => {
+		bloomRotation = value;
+	});
+
+	// Calculer l'angle du gradient en fonction de la rotation
+	// Le shader utilise 135° + rotation, donc on fait pareil
+	$: gradientAngle = bloomRotation + 135;
 
 	// Définir un tableau de liens pour chaque lettre
 	let letterLinks = [
@@ -68,7 +79,7 @@
 		: [];
 
 	// Calculer le nombre total de symboles (lettres non-espace)
-	$: totalSymbols = lettersWithLinks.filter(item => item.letter !== ' ').length;
+	$: totalSymbols = lettersWithLinks.filter((item) => item.letter !== ' ').length;
 	// Durée totale du cycle = nombre de symboles * X secondes par symbole
 	$: totalAnimationDuration = totalSymbols * 6;
 
@@ -99,6 +110,7 @@
 	transform: rotate({rotation});
 	--leftOffset: {leftOffset}px;
 	--bottomOffset: {bottomOffset}px;
+	--gradientAngle: {gradientAngle}deg;
 "
 >
 	{#if blooming}
@@ -109,7 +121,9 @@
 					{#if item.letter === ' '}
 						<span>&nbsp;</span>
 					{:else}
-						{@const symbolIndex = lettersWithLinks.slice(0, index).filter(i => i.letter !== ' ').length}
+						{@const symbolIndex = lettersWithLinks
+							.slice(0, index)
+							.filter((i) => i.letter !== ' ').length}
 						<a
 							href={item.link}
 							target="_blank"
@@ -121,8 +135,15 @@
 								class={showMysticalScripture ? 'fade-in-letter' : ''}
 								class:show-symbol={isTouchDevice}
 								class:desktop-hover={!isTouchDevice}
-								data-hover-symbol={symbolIndex === 0 ? '$' : symbolIndex === 1 ? '%' : symbolIndex === 2 ? '#'  : '?'}
-								style="transition-delay: {index * 0.2}s; --total-duration: {totalAnimationDuration}s; --symbol-index: {symbolIndex};"
+								data-hover-symbol={symbolIndex === 0
+									? '$'
+									: symbolIndex === 1
+										? '%'
+										: symbolIndex === 2
+											? '#'
+											: '?'}
+								style="transition-delay: {index *
+									0.2}s; --total-duration: {totalAnimationDuration}s; --symbol-index: {symbolIndex};"
 							>
 								{item.letter}
 							</span>
@@ -169,52 +190,93 @@
 		content: attr(data-hover-symbol);
 	}
 
-	span.show-symbol[style*="--symbol-index: 0"]::after {
+	span.show-symbol[style*='--symbol-index: 0']::after {
 		animation: symbol0 var(--total-duration) ease-in-out infinite;
 	}
-	
-	span.show-symbol[style*="--symbol-index: 1"]::after {
+
+	span.show-symbol[style*='--symbol-index: 1']::after {
 		animation: symbol1 var(--total-duration) ease-in-out infinite;
 	}
-	
-	span.show-symbol[style*="--symbol-index: 2"]::after {
+
+	span.show-symbol[style*='--symbol-index: 2']::after {
 		animation: symbol2 var(--total-duration) ease-in-out infinite;
 	}
-	
-	span.show-symbol[style*="--symbol-index: 3"]::after {
+
+	span.show-symbol[style*='--symbol-index: 3']::after {
 		animation: symbol3 var(--total-duration) ease-in-out infinite;
 	}
 
 	/* Keyframes pour l'animation séquentielle mobile */
 	@keyframes symbol0 {
-		0% { opacity: 0; }
-		8% { opacity: 0.1; }
-		17% { opacity: 0.8; }
-		25% { opacity: 0; }
-		100% { opacity: 0; }
+		0% {
+			opacity: 0;
+		}
+		8% {
+			opacity: 0.1;
+		}
+		17% {
+			opacity: 0.8;
+		}
+		25% {
+			opacity: 0;
+		}
+		100% {
+			opacity: 0;
+		}
 	}
 
 	@keyframes symbol1 {
-		0%, 25% { opacity: 0; }
-		33% { opacity: 0.4; }
-		42% { opacity: 0.8; }
-		50% { opacity: 0; }
-		100% { opacity: 0; }
+		0%,
+		25% {
+			opacity: 0;
+		}
+		33% {
+			opacity: 0.4;
+		}
+		42% {
+			opacity: 0.8;
+		}
+		50% {
+			opacity: 0;
+		}
+		100% {
+			opacity: 0;
+		}
 	}
 
 	@keyframes symbol2 {
-		0%, 50% { opacity: 0; }
-		58% { opacity: 0.4; }
-		67% { opacity: 0.8; }
-		75% { opacity: 0; }
-		100% { opacity: 0; }
+		0%,
+		50% {
+			opacity: 0;
+		}
+		58% {
+			opacity: 0.4;
+		}
+		67% {
+			opacity: 0.8;
+		}
+		75% {
+			opacity: 0;
+		}
+		100% {
+			opacity: 0;
+		}
 	}
 
 	@keyframes symbol3 {
-		0%, 75% { opacity: 0; }
-		83% { opacity: 0.4; }
-		92% { opacity: 0.8; }
-		100% { opacity: 0; }
+		0%,
+		75% {
+			opacity: 0;
+		}
+		83% {
+			opacity: 0.4;
+		}
+		92% {
+			opacity: 0.8;
+		}
+		100% {
+			opacity: 0;
+		}
 	}
 
 	:root {
@@ -257,7 +319,7 @@
 
 	.magic-seed.holographic {
 		background-image: linear-gradient(
-			135deg,
+			var(--gradientAngle, 135deg),
 			hsl(2, 100%, 73%),
 			hsl(53, 100%, 69%),
 			hsl(93, 100%, 69%),

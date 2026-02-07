@@ -6,7 +6,8 @@
 	import {
 		isMagicSeedBloomTriggered,
 		magicSeedBloomLeftOffset,
-		magicSeedBloomBottomOffset
+		magicSeedBloomBottomOffset,
+		magicSeedBloomRotation
 	} from '../lib/magicSeedBloomStore.js';
 	import { shouldFadeOutWebGLSeed } from '../lib/magicSeedFadeStore.js';
 	import { physicsSyncStore } from '../lib/physicsSyncStore.js';
@@ -302,6 +303,9 @@
 					}
 
 					growthTimeout = setTimeout(() => {
+						// CAPTURER L'ANGLE D'ABORD
+						const finalAngle = newMagicSeed.body.angle; // ← Déplacer ici
+
 						const currentAngle = newMagicSeed.body.angle;
 						if (currentAngle !== 0) {
 							Matter.Body.setAngle(newMagicSeed.body, 0);
@@ -314,9 +318,11 @@
 						// Calculer les offsets finaux une dernière fois
 						const finalCenterX = newMagicSeed.body.position.x;
 						const finalCenterY = newMagicSeed.body.position.y;
+						console.log(finalAngle);
 
 						magicSeedBloomLeftOffset.set(-(finalCenterX - innerWidth / 2));
 						magicSeedBloomBottomOffset.set(-(innerHeight - finalCenterY - 25));
+						magicSeedBloomRotation.set(finalAngle); // NOUVEAU : stocker l'angle
 
 						// MAINTENANT on rend visible la MagicSeed Svelte
 						newMagicSeedElem.style.opacity = '1';
@@ -342,7 +348,7 @@
 			};
 			Matter.Body.setPosition(newMagicSeed.body, newPosition);
 
-			const angleInRadians = ((oldMagicSeedPosition.angle) * Math.PI) / 180;
+			const angleInRadians = (oldMagicSeedPosition.angle * Math.PI) / 180;
 			Matter.Body.setAngle(newMagicSeed.body, angleInRadians);
 			Matter.Body.setStatic(newMagicSeed.body, false);
 

@@ -246,6 +246,7 @@
 				{isFirstBranchGrowing}
 				{allTheBranches}
 				on:branchMagicSeedWasClicked={handleMagicSeedClick}
+				{isRestoringFromSession}
 			/>
 			<MagicSeed
 				slot="magicSeedSlot"
